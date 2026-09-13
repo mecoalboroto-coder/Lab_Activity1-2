@@ -4,11 +4,6 @@ using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Infrastructure.Repositories;
 
-/// <summary>
-/// Simple in-memory implementation of <see cref="IStudentRepository"/>.
-/// Demonstrates that the application layer can operate without knowing
-/// how data is actually stored. No database is used.
-/// </summary>
 public class InMemoryStudentRepository : IStudentRepository
 {
     private readonly ConcurrentDictionary<int, Student> _students = new();
@@ -19,5 +14,11 @@ public class InMemoryStudentRepository : IStudentRepository
     {
         _students.TryGetValue(id, out var student);
         return Task.FromResult(student);
+    }
+
+    public Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Student> all = _students.Values.OrderBy(s => s.Id).ToList();
+        return Task.FromResult(all);
     }
 }

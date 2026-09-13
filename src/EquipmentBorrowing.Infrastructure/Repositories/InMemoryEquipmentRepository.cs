@@ -4,9 +4,6 @@ using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Infrastructure.Repositories;
 
-/// <summary>
-/// Simple in-memory implementation of <see cref="IEquipmentRepository"/>.
-/// </summary>
 public class InMemoryEquipmentRepository : IEquipmentRepository
 {
     private readonly ConcurrentDictionary<int, Equipment> _equipment = new();
@@ -19,10 +16,17 @@ public class InMemoryEquipmentRepository : IEquipmentRepository
         return Task.FromResult(equipment);
     }
 
+    public Task<IReadOnlyList<Equipment>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Equipment> all = _equipment.Values.OrderBy(e => e.Id).ToList();
+        return Task.FromResult(all);
+    }
+
     public Task<IReadOnlyList<Equipment>> GetAvailableAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Equipment> available = _equipment.Values
             .Where(e => e.IsAvailable)
+            .OrderBy(e => e.Id)
             .ToList();
 
         return Task.FromResult(available);
