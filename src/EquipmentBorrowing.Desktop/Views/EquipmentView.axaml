@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:models="using:EquipmentBorrowing.Domain"
+             xmlns:conv="using:EquipmentBorrowing.Desktop.Converters"
+             x:Class="EquipmentBorrowing.Desktop.Views.EquipmentView"
+             x:DataType="vm:EquipmentViewModel">
+
+    <Grid ColumnDefinitions="2*,1*" RowDefinitions="Auto,*">
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Equipment" Classes="SectionTitle" />
+
+        <ListBox Grid.Row="1" Grid.Column="0"
+                 ItemsSource="{Binding EquipmentItems}"
+                 SelectedItem="{Binding SelectedEquipment}"
+                 Margin="0,8,16,0">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="models:Equipment">
+                    <Border Classes="EquipmentCard">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}" Classes="ItemTitle" />
+                            <TextBlock Text="{Binding Description}" Classes="ItemSubtitle" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" Classes="ItemMeta" />
+                                <TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}" Classes="ItemMeta" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Border Grid.Row="1" Grid.Column="1" Classes="FormPanel">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Borrow Equipment" Classes="FormTitle" />
+
+                <TextBlock Text="Student" Classes="FieldLabel" />
+                <ComboBox ItemsSource="{Binding Students}"
+                          SelectedItem="{Binding SelectedStudent}"
+                          HorizontalAlignment="Stretch">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="models:Student">
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Text="Selected Equipment" Classes="FieldLabel" />
+                <TextBlock Text="{Binding SelectedEquipment.Name, TargetNullValue='(none selected)'}" Classes="ItemSubtitle" />
+
+                <TextBlock Text="Expected Return Date" Classes="FieldLabel" />
+                <DatePicker SelectedDate="{Binding ExpectedReturnDate}" HorizontalAlignment="Stretch" />
+
+                <Button Content="Borrow Equipment"
+                        Command="{Binding BorrowCommand}"
+                        Classes="PrimaryButton"
+                        HorizontalAlignment="Stretch" />
+
+                <TextBlock Text="{Binding StatusMessage}"
+                           IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringNotEmptyConverter.Instance}}"
+                           Foreground="{Binding IsError, Converter={x:Static conv:BoolToStatusBrushConverter.Instance}}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+    </Grid>
+
+</UserControl>
