@@ -2,3 +2,9 @@ bin/
 obj/
 *.user
 .vs/
+
+# SQLite database files are generated locally by migrations/seeding,
+# not committed - the schema is reproducible from the Migrations folder.
+*.db
+*.db-shm
+*.db-wal
