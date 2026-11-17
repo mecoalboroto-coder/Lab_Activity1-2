@@ -1,12 +1,5 @@
 namespace EquipmentBorrowing.Domain;
 
-/// <summary>
-/// Represents a single borrowing transaction linking a student to a
-/// piece of equipment. It owns the transition of its own status
-/// (Active -> Returned), but it does NOT validate whether the
-/// borrowing was allowed to happen in the first place — that
-/// cross-entity validation belongs in the application service.
-/// </summary>
 public class Borrowing
 {
     public int Id { get; }
@@ -14,7 +7,11 @@ public class Borrowing
     public int EquipmentId { get; }
     public DateOnly DateBorrowed { get; }
     public DateOnly ExpectedReturnDate { get; }
+    public DateOnly? ReturnedAt { get; private set; }
     public BorrowingStatus Status { get; private set; }
+
+    public Student? Student { get; private set; }
+    public Equipment? Equipment { get; private set; }
 
     public Borrowing(
         int id,
@@ -39,17 +36,12 @@ public class Borrowing
         Status = BorrowingStatus.Active;
     }
 
-    /// <summary>
-    /// Marks this borrowing as returned. Only concerns the record's own
-    /// state — it does not update the related Equipment's availability;
-    /// that coordination belongs to the application service, which has
-    /// access to both objects.
-    /// </summary>
-    public void MarkReturned()
+    public void MarkReturned(DateOnly returnedAt)
     {
         if (Status == BorrowingStatus.Returned)
             throw new InvalidOperationException("Borrowing has already been returned.");
 
         Status = BorrowingStatus.Returned;
+        ReturnedAt = returnedAt;
     }
 }

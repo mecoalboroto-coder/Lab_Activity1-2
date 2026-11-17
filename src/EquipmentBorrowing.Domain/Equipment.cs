@@ -7,6 +7,8 @@ public class Equipment
     public string? Description { get; }
     public bool IsAvailable { get; private set; }
 
+    public ICollection<Borrowing> Borrowings { get; private set; } = new List<Borrowing>();
+
     public Equipment(int id, string name, string? description = null, bool isAvailable = true)
     {
         if (id <= 0)
