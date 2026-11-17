@@ -6,14 +6,17 @@ using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Desktop.ViewModels;
 using EquipmentBorrowing.Desktop.Views;
-using EquipmentBorrowing.Domain;
+using EquipmentBorrowing.Infrastructure.Persistence;
 using EquipmentBorrowing.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EquipmentBorrowing.Desktop;
 
 public partial class App : Avalonia.Application
 {
+    private const string ConnectionString = "Data Source=equipmentborrowing.db";
+
     public static IServiceProvider Services { get; private set; } = null!;
 
     public override void Initialize()
@@ -27,7 +30,7 @@ public partial class App : Avalonia.Application
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
-        SeedDemoData();
+        ApplyMigrationsAndSeedData();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -43,9 +46,12 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        services.AddSingleton<IStudentRepository, InMemoryStudentRepository>();
-        services.AddSingleton<IEquipmentRepository, InMemoryEquipmentRepository>();
-        services.AddSingleton<IBorrowingRepository, InMemoryBorrowingRepository>();
+        services.AddDbContextFactory<EquipmentBorrowingDbContext>(options =>
+            options.UseSqlite(ConnectionString));
+
+        services.AddScoped<IStudentRepository, EfStudentRepository>();
+        services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
+        services.AddScoped<IBorrowingRepository, EfBorrowingRepository>();
 
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();
@@ -55,18 +61,13 @@ public partial class App : Avalonia.Application
         services.AddSingleton<MainWindowViewModel>();
     }
 
-    private static void SeedDemoData()
+    private static void ApplyMigrationsAndSeedData()
     {
-        var students = (InMemoryStudentRepository)Services.GetRequiredService<IStudentRepository>();
-        var equipment = (InMemoryEquipmentRepository)Services.GetRequiredService<IEquipmentRepository>();
+        var dbContextFactory = Services.GetRequiredService<IDbContextFactory<EquipmentBorrowingDbContext>>();
 
-        students.Seed(new Student(1, "Juan Dela Cruz"));
-        students.Seed(new Student(2, "Maria Santos"));
-        students.Seed(new Student(3, "Pedro Reyes", isAllowedToBorrow: false));
+        using var context = dbContextFactory.CreateDbContext();
+        context.Database.Migrate();
 
-        equipment.Seed(new Equipment(100, "Digital Multimeter", "Measuring instrument"));
-        equipment.Seed(new Equipment(101, "Oscilloscope", "Waveform display", isAvailable: false));
-        equipment.Seed(new Equipment(102, "Soldering Iron", "Electronics tool"));
-        equipment.Seed(new Equipment(103, "Function Generator", "Signal generator"));
+        DatabaseSeeder.SeedAsync(context).GetAwaiter().GetResult();
     }
 }

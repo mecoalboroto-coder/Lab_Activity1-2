@@ -53,12 +53,10 @@ public partial class EquipmentViewModel : ViewModelBase
         foreach (var item in equipment)
             EquipmentItems.Add(item);
 
-        if (Students.Count == 0)
-        {
-            var students = await _studentRepository.GetAllAsync();
-            foreach (var student in students)
-                Students.Add(student);
-        }
+        var students = await _studentRepository.GetAllAsync();
+        Students.Clear();
+        foreach (var student in students)
+            Students.Add(student);
     }
 
     [RelayCommand]

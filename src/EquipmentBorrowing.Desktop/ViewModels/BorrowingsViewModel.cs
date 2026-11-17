@@ -11,8 +11,6 @@ namespace EquipmentBorrowing.Desktop.ViewModels;
 public partial class BorrowingsViewModel : ViewModelBase
 {
     private readonly IBorrowingRepository _borrowingRepository;
-    private readonly IStudentRepository _studentRepository;
-    private readonly IEquipmentRepository _equipmentRepository;
     private readonly ReturnEquipmentService _returnEquipmentService;
 
     public ObservableCollection<BorrowingDisplayItem> ActiveBorrowings { get; } = new();
@@ -30,13 +28,9 @@ public partial class BorrowingsViewModel : ViewModelBase
 
     public BorrowingsViewModel(
         IBorrowingRepository borrowingRepository,
-        IStudentRepository studentRepository,
-        IEquipmentRepository equipmentRepository,
         ReturnEquipmentService returnEquipmentService)
     {
         _borrowingRepository = borrowingRepository;
-        _studentRepository = studentRepository;
-        _equipmentRepository = equipmentRepository;
         _returnEquipmentService = returnEquipmentService;
     }
 
@@ -48,14 +42,11 @@ public partial class BorrowingsViewModel : ViewModelBase
         ActiveBorrowings.Clear();
         foreach (var borrowing in active)
         {
-            var student = await _studentRepository.GetByIdAsync(borrowing.StudentId);
-            var equipment = await _equipmentRepository.GetByIdAsync(borrowing.EquipmentId);
-
             ActiveBorrowings.Add(new BorrowingDisplayItem
             {
                 BorrowingId = borrowing.Id,
-                StudentName = student?.Name ?? $"Student {borrowing.StudentId}",
-                EquipmentName = equipment?.Name ?? $"Equipment {borrowing.EquipmentId}",
+                StudentName = borrowing.Student?.Name ?? $"Student {borrowing.StudentId}",
+                EquipmentName = borrowing.Equipment?.Name ?? $"Equipment {borrowing.EquipmentId}",
                 DateBorrowed = borrowing.DateBorrowed,
                 ExpectedReturnDate = borrowing.ExpectedReturnDate
             });
