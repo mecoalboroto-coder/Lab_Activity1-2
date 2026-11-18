@@ -8,12 +8,22 @@ public class BorrowingConfiguration : IEntityTypeConfiguration<Borrowing>
 {
     public void Configure(EntityTypeBuilder<Borrowing> builder)
     {
-        builder.ToTable("Borrowings");
+        builder.ToTable("Borrowings", t =>
+        {
+            t.HasCheckConstraint(
+                "CK_Borrowings_ExpectedReturn_After_Borrowed",
+                "\"ExpectedReturnDate\" > \"DateBorrowed\"");
+
+            t.HasCheckConstraint(
+                "CK_Borrowings_Status_ReturnedAt_Consistent",
+                "(\"Status\" = 'Active' AND \"ReturnedAt\" IS NULL) OR " +
+                "(\"Status\" = 'Returned' AND \"ReturnedAt\" IS NOT NULL AND \"ReturnedAt\" >= \"DateBorrowed\")");
+        });
 
         builder.HasKey(b => b.Id);
 
         builder.Property(b => b.Id)
-            .ValueGeneratedNever();
+            .ValueGeneratedOnAdd();
 
         builder.Property(b => b.StudentId)
             .IsRequired();
@@ -46,7 +56,11 @@ public class BorrowingConfiguration : IEntityTypeConfiguration<Borrowing>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(b => b.StudentId);
-        builder.HasIndex(b => b.EquipmentId);
         builder.HasIndex(b => b.Status);
+
+        builder.HasIndex(b => b.EquipmentId)
+            .IsUnique()
+            .HasDatabaseName("UX_Borrowings_EquipmentId_Active")
+            .HasFilter("\"Status\" = 'Active'");
     }
 }

@@ -2,33 +2,32 @@ namespace EquipmentBorrowing.Domain;
 
 public class Borrowing
 {
-    public int Id { get; }
-    public int StudentId { get; }
-    public int EquipmentId { get; }
-    public DateOnly DateBorrowed { get; }
-    public DateOnly ExpectedReturnDate { get; }
+    public int Id { get; private set; }
+    public int StudentId { get; private set; }
+    public int EquipmentId { get; private set; }
+    public DateOnly DateBorrowed { get; private set; }
+    public DateOnly ExpectedReturnDate { get; private set; }
     public DateOnly? ReturnedAt { get; private set; }
     public BorrowingStatus Status { get; private set; }
 
     public Student? Student { get; private set; }
     public Equipment? Equipment { get; private set; }
 
+    private Borrowing()
+    {
+    }
+
     public Borrowing(
-        int id,
         int studentId,
         int equipmentId,
         DateOnly dateBorrowed,
         DateOnly expectedReturnDate)
     {
-        if (id <= 0)
-            throw new ArgumentOutOfRangeException(nameof(id), "Borrowing id must be positive.");
-
-        if (expectedReturnDate < dateBorrowed)
+        if (expectedReturnDate <= dateBorrowed)
             throw new ArgumentException(
-                "Expected return date cannot be before the date borrowed.",
+                "Expected return date must be later than the date borrowed.",
                 nameof(expectedReturnDate));
 
-        Id = id;
         StudentId = studentId;
         EquipmentId = equipmentId;
         DateBorrowed = dateBorrowed;
@@ -40,6 +39,11 @@ public class Borrowing
     {
         if (Status == BorrowingStatus.Returned)
             throw new InvalidOperationException("Borrowing has already been returned.");
+
+        if (returnedAt < DateBorrowed)
+            throw new ArgumentException(
+                "Return date cannot precede the date borrowed.",
+                nameof(returnedAt));
 
         Status = BorrowingStatus.Returned;
         ReturnedAt = returnedAt;

@@ -9,36 +9,41 @@ public static class DatabaseSeeder
         EquipmentBorrowingDbContext context,
         CancellationToken cancellationToken = default)
     {
-        if (await context.Students.AnyAsync(cancellationToken))
+        if (await context.Students.AnyAsync(cancellationToken)
+            || await context.Equipment.AnyAsync(cancellationToken))
             return;
+
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         var students = new[]
         {
-            new Student(1, "Juan Dela Cruz"),
-            new Student(2, "Maria Santos"),
-            new Student(3, "Pedro Reyes", isAllowedToBorrow: false)
+            new Student("2024-0001", "Juan Dela Cruz", "juan@example.com"),
+            new Student("2024-0002", "Maria Santos"),
+            new Student("2024-0003", "Pedro Reyes")
         };
+        students[2].Suspend();
 
         var equipment = new[]
         {
-            new Equipment(100, "Digital Multimeter", "Measuring instrument"),
-            new Equipment(101, "Oscilloscope", "Waveform display", isAvailable: false),
-            new Equipment(102, "Soldering Iron", "Electronics tool"),
-            new Equipment(103, "Function Generator", "Signal generator")
+            new Equipment("EQ-100", "Digital Multimeter", "Measuring instrument"),
+            new Equipment("EQ-101", "Oscilloscope", "Waveform display"),
+            new Equipment("EQ-102", "Soldering Iron", "Electronics tool"),
+            new Equipment("EQ-103", "Function Generator", "Signal generator")
         };
+        equipment[1].MarkUnavailable();
 
         context.Students.AddRange(students);
         context.Equipment.AddRange(equipment);
         await context.SaveChangesAsync(cancellationToken);
 
-        var existingBorrowing = new Borrowing(
-            id: 9000,
-            studentId: 2,
-            equipmentId: 101,
-            dateBorrowed: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)),
-            expectedReturnDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)));
-
-        context.Borrowings.Add(existingBorrowing);
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        context.Borrowings.Add(new Borrowing(
+            students[1].Id,
+            equipment[1].Id,
+            today.AddDays(-2),
+            today.AddDays(5)));
         await context.SaveChangesAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
     }
 }

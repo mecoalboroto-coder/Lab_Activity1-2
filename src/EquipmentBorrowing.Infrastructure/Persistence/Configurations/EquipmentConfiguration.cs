@@ -8,12 +8,21 @@ public class EquipmentConfiguration : IEntityTypeConfiguration<Equipment>
 {
     public void Configure(EntityTypeBuilder<Equipment> builder)
     {
-        builder.ToTable("Equipment");
+        builder.ToTable("Equipment", t =>
+        {
+            t.HasCheckConstraint("CK_Equipment_Identifier_NotBlank", "btrim(\"Identifier\") <> ''");
+            t.HasCheckConstraint("CK_Equipment_Name_NotBlank", "btrim(\"Name\") <> ''");
+            t.HasCheckConstraint("CK_Equipment_Description_NotBlank", "\"Description\" IS NULL OR btrim(\"Description\") <> ''");
+        });
 
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .ValueGeneratedNever();
+            .ValueGeneratedOnAdd();
+
+        builder.Property(e => e.Identifier)
+            .IsRequired()
+            .HasMaxLength(50);
 
         builder.Property(e => e.Name)
             .IsRequired()
@@ -24,8 +33,5 @@ public class EquipmentConfiguration : IEntityTypeConfiguration<Equipment>
 
         builder.Property(e => e.IsAvailable)
             .IsRequired();
-
-        builder.HasIndex(e => e.Name)
-            .IsUnique();
     }
 }
