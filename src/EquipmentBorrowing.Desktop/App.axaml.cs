@@ -9,14 +9,13 @@ using EquipmentBorrowing.Desktop.Views;
 using EquipmentBorrowing.Infrastructure.Persistence;
 using EquipmentBorrowing.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EquipmentBorrowing.Desktop;
 
 public partial class App : Avalonia.Application
 {
-    private const string ConnectionString = "Data Source=equipmentborrowing.db";
-
     public static IServiceProvider Services { get; private set; } = null!;
 
     public override void Initialize()
@@ -27,7 +26,7 @@ public partial class App : Avalonia.Application
     public override void OnFrameworkInitializationCompleted()
     {
         var services = new ServiceCollection();
-        ConfigureServices(services);
+        ConfigureServices(services, ResolveConnectionString());
         Services = services.BuildServiceProvider();
 
         ApplyMigrationsAndSeedData();
@@ -44,10 +43,22 @@ public partial class App : Avalonia.Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static void ConfigureServices(IServiceCollection services)
+    private static string ResolveConnectionString()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddUserSecrets<App>(optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+        return configuration.GetConnectionString("Default")
+            ?? throw new InvalidOperationException(
+                "Connection string 'ConnectionStrings:Default' is not configured. See the README.");
+    }
+
+    private static void ConfigureServices(IServiceCollection services, string connectionString)
     {
         services.AddDbContextFactory<EquipmentBorrowingDbContext>(options =>
-            options.UseSqlite(ConnectionString));
+            options.UseNpgsql(connectionString));
 
         services.AddScoped<IStudentRepository, EfStudentRepository>();
         services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
