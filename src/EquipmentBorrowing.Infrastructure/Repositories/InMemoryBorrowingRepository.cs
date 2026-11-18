@@ -7,9 +7,13 @@ namespace EquipmentBorrowing.Infrastructure.Repositories;
 public class InMemoryBorrowingRepository : IBorrowingRepository
 {
     private readonly ConcurrentDictionary<int, Borrowing> _borrowings = new();
+    private int _nextId;
 
     public Task AddAsync(Borrowing borrowing, CancellationToken cancellationToken = default)
     {
+        if (borrowing.Id == 0)
+            EntityIdAssigner.Assign(borrowing, Interlocked.Increment(ref _nextId));
+
         _borrowings[borrowing.Id] = borrowing;
         return Task.CompletedTask;
     }

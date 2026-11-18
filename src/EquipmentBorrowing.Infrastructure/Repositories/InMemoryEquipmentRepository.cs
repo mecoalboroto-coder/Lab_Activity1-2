@@ -7,8 +7,15 @@ namespace EquipmentBorrowing.Infrastructure.Repositories;
 public class InMemoryEquipmentRepository : IEquipmentRepository
 {
     private readonly ConcurrentDictionary<int, Equipment> _equipment = new();
+    private int _nextId;
 
-    public void Seed(Equipment equipment) => _equipment[equipment.Id] = equipment;
+    public void Seed(Equipment equipment)
+    {
+        if (equipment.Id == 0)
+            EntityIdAssigner.Assign(equipment, Interlocked.Increment(ref _nextId));
+
+        _equipment[equipment.Id] = equipment;
+    }
 
     public Task<Equipment?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

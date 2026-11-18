@@ -60,9 +60,10 @@ public partial class App : Avalonia.Application
         services.AddDbContextFactory<EquipmentBorrowingDbContext>(options =>
             options.UseNpgsql(connectionString));
 
-        services.AddScoped<IStudentRepository, EfStudentRepository>();
-        services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
-        services.AddScoped<IBorrowingRepository, EfBorrowingRepository>();
+        services.AddSingleton<IStudentRepository, EfStudentRepository>();
+        services.AddSingleton<IEquipmentRepository, EfEquipmentRepository>();
+        services.AddSingleton<IBorrowingRepository, EfBorrowingRepository>();
+        services.AddSingleton<IBorrowingTransactions, EfBorrowingTransactions>();
 
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();

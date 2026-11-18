@@ -2,26 +2,28 @@ using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Application.Services;
 
-/// <summary>
-/// Outcome of a Borrow Equipment attempt. Using a result record instead
-/// of exceptions for expected business-rule failures keeps "student not
-/// eligible" or "equipment unavailable" as ordinary control flow rather
-/// than exceptional program state.
-/// </summary>
 public sealed record BorrowResult
 {
     public bool Success { get; }
+    public bool OutcomeUnknown { get; }
     public string? FailureReason { get; }
-    public Borrowing? Borrowing { get; }
+    public IReadOnlyList<Borrowing> Borrowings { get; }
+    public Borrowing? Borrowing => Borrowings.FirstOrDefault();
 
-    private BorrowResult(bool success, string? failureReason, Borrowing? borrowing)
+    private BorrowResult(bool success, bool outcomeUnknown, string? failureReason, IReadOnlyList<Borrowing> borrowings)
     {
         Success = success;
+        OutcomeUnknown = outcomeUnknown;
         FailureReason = failureReason;
-        Borrowing = borrowing;
+        Borrowings = borrowings;
     }
 
-    public static BorrowResult Succeeded(Borrowing borrowing) => new(true, null, borrowing);
+    public static BorrowResult Succeeded(IReadOnlyList<Borrowing> borrowings) =>
+        new(true, false, null, borrowings);
 
-    public static BorrowResult Failed(string reason) => new(false, reason, null);
+    public static BorrowResult Failed(string reason) =>
+        new(false, false, reason, Array.Empty<Borrowing>());
+
+    public static BorrowResult Unknown(string reason) =>
+        new(false, true, reason, Array.Empty<Borrowing>());
 }
