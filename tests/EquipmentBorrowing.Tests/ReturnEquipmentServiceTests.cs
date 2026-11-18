@@ -7,39 +7,44 @@ namespace EquipmentBorrowing.Tests;
 
 public class ReturnEquipmentServiceTests
 {
-    [Fact]
-    public async Task ReturnAsync_WithActiveBorrowing_Succeeds_AndMakesEquipmentAvailable()
+    private static DateOnly NextWeek => DateOnly.FromDateTime(DateTime.Now.AddDays(7));
+
+    private static (BorrowEquipmentService Borrow, ReturnEquipmentService Return,
+        InMemoryStudentRepository Students, InMemoryEquipmentRepository Equipment) CreateServices()
     {
         var students = new InMemoryStudentRepository();
         var equipment = new InMemoryEquipmentRepository();
         var borrowings = new InMemoryBorrowingRepository();
+        var transactions = new InMemoryBorrowingTransactions(students, equipment, borrowings);
+        return (new BorrowEquipmentService(transactions), new ReturnEquipmentService(transactions), students, equipment);
+    }
 
-        students.Seed(new Student(1, "Juan Dela Cruz"));
-        equipment.Seed(new Equipment(100, "Multimeter"));
+    [Fact]
+    public async Task ReturnAsync_WithActiveBorrowing_Succeeds_AndMakesEquipmentAvailable()
+    {
+        var (borrow, returns, students, equipment) = CreateServices();
+        var student = new Student("2024-0001", "Juan Dela Cruz");
+        var item = new Equipment("EQ-100", "Multimeter");
+        students.Seed(student);
+        equipment.Seed(item);
 
-        var borrowService = new BorrowEquipmentService(students, equipment, borrowings);
-        var borrowResult = await borrowService.BorrowAsync(1, 100, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)));
+        var borrowResult = await borrow.BorrowAsync(student.Id, item.Id, NextWeek);
         Assert.True(borrowResult.Success);
 
-        var returnService = new ReturnEquipmentService(equipment, borrowings);
-        var returnResult = await returnService.ReturnAsync(borrowResult.Borrowing!.Id);
+        var returnResult = await returns.ReturnAsync(borrowResult.Borrowing!.Id);
 
         Assert.True(returnResult.Success);
         Assert.Equal(BorrowingStatus.Returned, returnResult.Borrowing!.Status);
         Assert.NotNull(returnResult.Borrowing.ReturnedAt);
-
-        var refreshedEquipment = await equipment.GetByIdAsync(100);
-        Assert.True(refreshedEquipment!.IsAvailable);
+        Assert.True((await equipment.GetByIdAsync(item.Id))!.IsAvailable);
     }
 
     [Fact]
     public async Task ReturnAsync_WhenBorrowingDoesNotExist_Fails()
     {
-        var equipment = new InMemoryEquipmentRepository();
-        var borrowings = new InMemoryBorrowingRepository();
-        var returnService = new ReturnEquipmentService(equipment, borrowings);
+        var (_, returns, _, _) = CreateServices();
 
-        var result = await returnService.ReturnAsync(999);
+        var result = await returns.ReturnAsync(999);
 
         Assert.False(result.Success);
     }
@@ -47,20 +52,17 @@ public class ReturnEquipmentServiceTests
     [Fact]
     public async Task ReturnAsync_WhenAlreadyReturned_Fails()
     {
-        var students = new InMemoryStudentRepository();
-        var equipment = new InMemoryEquipmentRepository();
-        var borrowings = new InMemoryBorrowingRepository();
+        var (borrow, returns, students, equipment) = CreateServices();
+        var student = new Student("2024-0001", "Juan Dela Cruz");
+        var item = new Equipment("EQ-100", "Multimeter");
+        students.Seed(student);
+        equipment.Seed(item);
 
-        students.Seed(new Student(1, "Juan Dela Cruz"));
-        equipment.Seed(new Equipment(100, "Multimeter"));
+        var borrowResult = await borrow.BorrowAsync(student.Id, item.Id, NextWeek);
+        var borrowingId = borrowResult.Borrowing!.Id;
+        await returns.ReturnAsync(borrowingId);
 
-        var borrowService = new BorrowEquipmentService(students, equipment, borrowings);
-        var borrowResult = await borrowService.BorrowAsync(1, 100, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)));
-
-        var returnService = new ReturnEquipmentService(equipment, borrowings);
-        await returnService.ReturnAsync(borrowResult.Borrowing!.Id);
-
-        var secondAttempt = await returnService.ReturnAsync(borrowResult.Borrowing!.Id);
+        var secondAttempt = await returns.ReturnAsync(borrowingId);
 
         Assert.False(secondAttempt.Success);
     }
