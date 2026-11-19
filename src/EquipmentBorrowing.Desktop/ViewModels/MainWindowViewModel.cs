@@ -11,6 +11,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly EquipmentManagementViewModel _equipmentManagementViewModel;
     private readonly MultiCheckoutViewModel _multiCheckoutViewModel;
     private readonly StudentHistoryViewModel _studentHistoryViewModel;
+    private readonly EquipmentHistoryViewModel _equipmentHistoryViewModel;
+    private readonly BorrowingSearchViewModel _borrowingSearchViewModel;
 
     [ObservableProperty]
     private ViewModelBase currentViewModel;
@@ -21,7 +23,9 @@ public partial class MainWindowViewModel : ViewModelBase
         StudentsViewModel studentsViewModel,
         EquipmentManagementViewModel equipmentManagementViewModel,
         MultiCheckoutViewModel multiCheckoutViewModel,
-        StudentHistoryViewModel studentHistoryViewModel)
+        StudentHistoryViewModel studentHistoryViewModel,
+        EquipmentHistoryViewModel equipmentHistoryViewModel,
+        BorrowingSearchViewModel borrowingSearchViewModel)
     {
         _equipmentViewModel = equipmentViewModel;
         _borrowingsViewModel = borrowingsViewModel;
@@ -29,6 +33,8 @@ public partial class MainWindowViewModel : ViewModelBase
         _equipmentManagementViewModel = equipmentManagementViewModel;
         _multiCheckoutViewModel = multiCheckoutViewModel;
         _studentHistoryViewModel = studentHistoryViewModel;
+        _equipmentHistoryViewModel = equipmentHistoryViewModel;
+        _borrowingSearchViewModel = borrowingSearchViewModel;
 
         _equipmentViewModel.BorrowingCompleted += async (_, _) =>
         {
@@ -89,10 +95,25 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ShowMultiCheckout() => CurrentViewModel = _multiCheckoutViewModel;
 
     [RelayCommand]
+    private void ShowEquipmentHistory()
+    {
+        CurrentViewModel = _equipmentHistoryViewModel;
+        _ = _equipmentHistoryViewModel.RefreshCommand.ExecuteAsync(null);
+    }
+
+    [RelayCommand]
+    private void ShowBorrowingSearch()
+    {
+        CurrentViewModel = _borrowingSearchViewModel;
+        _ = _borrowingSearchViewModel.SearchCommand.ExecuteAsync(null);
+    }
+
+    [RelayCommand]
     private void ShowStudentHistory()
     {
         CurrentViewModel = _studentHistoryViewModel;
         _ = _studentHistoryViewModel.RefreshCommand.ExecuteAsync(null);
     }
 }
+
 

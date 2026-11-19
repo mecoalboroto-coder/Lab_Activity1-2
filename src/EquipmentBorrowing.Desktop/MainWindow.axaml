@@ -27,6 +27,12 @@
         <DataTemplate DataType="vm:StudentHistoryViewModel">
             <views:StudentHistoryView />
         </DataTemplate>
+        <DataTemplate DataType="vm:EquipmentHistoryViewModel">
+            <views:EquipmentHistoryView />
+        </DataTemplate>
+        <DataTemplate DataType="vm:BorrowingSearchViewModel">
+            <views:BorrowingSearchView />
+        </DataTemplate>
     </Window.DataTemplates>
 
     <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,*">
@@ -54,6 +60,12 @@
             <Button Content="Student History"
                     Command="{Binding ShowStudentHistoryCommand}"
                     Classes="NavButton" />
+            <Button Content="Equipment History"
+                    Command="{Binding ShowEquipmentHistoryCommand}"
+                    Classes="NavButton" />
+            <Button Content="Search Borrowings"
+                    Command="{Binding ShowBorrowingSearchCommand}"
+                    Classes="NavButton" />
         </StackPanel>
 
         <ContentControl Grid.Row="1" Grid.Column="1"
@@ -62,6 +74,7 @@
     </Grid>
 
 </Window>
+
 
 
 
