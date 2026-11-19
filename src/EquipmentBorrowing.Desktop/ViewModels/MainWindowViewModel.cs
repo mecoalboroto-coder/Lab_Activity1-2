@@ -9,6 +9,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly BorrowingsViewModel _borrowingsViewModel;
     private readonly StudentsViewModel _studentsViewModel;
     private readonly EquipmentManagementViewModel _equipmentManagementViewModel;
+    private readonly MultiCheckoutViewModel _multiCheckoutViewModel;
 
     [ObservableProperty]
     private ViewModelBase currentViewModel;
@@ -17,32 +18,47 @@ public partial class MainWindowViewModel : ViewModelBase
         EquipmentViewModel equipmentViewModel,
         BorrowingsViewModel borrowingsViewModel,
         StudentsViewModel studentsViewModel,
-        EquipmentManagementViewModel equipmentManagementViewModel)
+        EquipmentManagementViewModel equipmentManagementViewModel,
+        MultiCheckoutViewModel multiCheckoutViewModel)
     {
         _equipmentViewModel = equipmentViewModel;
         _borrowingsViewModel = borrowingsViewModel;
         _studentsViewModel = studentsViewModel;
         _equipmentManagementViewModel = equipmentManagementViewModel;
+        _multiCheckoutViewModel = multiCheckoutViewModel;
 
         _equipmentViewModel.BorrowingCompleted += async (_, _) =>
         {
             await _borrowingsViewModel.LoadCommand.ExecuteAsync(null);
             await _equipmentManagementViewModel.LoadCommand.ExecuteAsync(null);
+            await _multiCheckoutViewModel.LoadCommand.ExecuteAsync(null);
         };
 
         _borrowingsViewModel.ReturnCompleted += async (_, _) =>
         {
             await _equipmentViewModel.LoadCommand.ExecuteAsync(null);
             await _equipmentManagementViewModel.LoadCommand.ExecuteAsync(null);
+            await _multiCheckoutViewModel.LoadCommand.ExecuteAsync(null);
         };
 
         _studentsViewModel.StudentsChanged += async (_, _) =>
+        {
             await _equipmentViewModel.LoadCommand.ExecuteAsync(null);
+            await _multiCheckoutViewModel.LoadCommand.ExecuteAsync(null);
+        };
 
         _equipmentManagementViewModel.EquipmentChanged += async (_, _) =>
         {
             await _equipmentViewModel.LoadCommand.ExecuteAsync(null);
             await _borrowingsViewModel.LoadCommand.ExecuteAsync(null);
+            await _multiCheckoutViewModel.LoadCommand.ExecuteAsync(null);
+        };
+
+        _multiCheckoutViewModel.CheckoutCompleted += async (_, _) =>
+        {
+            await _equipmentViewModel.LoadCommand.ExecuteAsync(null);
+            await _borrowingsViewModel.LoadCommand.ExecuteAsync(null);
+            await _equipmentManagementViewModel.LoadCommand.ExecuteAsync(null);
         };
 
         currentViewModel = _equipmentViewModel;
@@ -51,6 +67,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _ = _borrowingsViewModel.LoadCommand.ExecuteAsync(null);
         _ = _studentsViewModel.LoadCommand.ExecuteAsync(null);
         _ = _equipmentManagementViewModel.LoadCommand.ExecuteAsync(null);
+        _ = _multiCheckoutViewModel.LoadCommand.ExecuteAsync(null);
     }
 
     [RelayCommand]
@@ -64,4 +81,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void ShowManageEquipment() => CurrentViewModel = _equipmentManagementViewModel;
+
+    [RelayCommand]
+    private void ShowMultiCheckout() => CurrentViewModel = _multiCheckoutViewModel;
 }

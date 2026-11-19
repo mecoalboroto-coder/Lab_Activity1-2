@@ -77,6 +77,7 @@ public partial class App : Avalonia.Application
         services.AddTransient<BorrowingsViewModel>();
         services.AddTransient<StudentsViewModel>();
         services.AddTransient<EquipmentManagementViewModel>();
+        services.AddTransient<MultiCheckoutViewModel>();
         services.AddSingleton<MainWindowViewModel>();
     }
 
@@ -92,5 +93,6 @@ public partial class App : Avalonia.Application
         }).GetAwaiter().GetResult();
     }
 }
+
 
 

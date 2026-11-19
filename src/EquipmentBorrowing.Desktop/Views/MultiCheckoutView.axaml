@@ -1,0 +1,76 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:models="using:EquipmentBorrowing.Domain"
+             xmlns:conv="using:EquipmentBorrowing.Desktop.Converters"
+             x:Class="EquipmentBorrowing.Desktop.Views.MultiCheckoutView"
+             x:DataType="vm:MultiCheckoutViewModel">
+
+    <Grid ColumnDefinitions="*,320" RowDefinitions="Auto,*">
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Multi-Item Checkout" Classes="SectionTitle" />
+
+        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,Auto,*" Margin="0,8,16,0">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Tick at least two available items"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadCommand}" />
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                <TextBlock Text="Loading..." IsVisible="{Binding IsLoading}" />
+                <TextBlock Text="{Binding EmptyMessage}"
+                           IsVisible="{Binding EmptyMessage, Converter={x:Static conv:StringNotEmptyConverter.Instance}}" />
+            </StackPanel>
+
+            <ListBox Grid.Row="2" ItemsSource="{Binding Items}" Margin="0,8,0,0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="vm:SelectableEquipment">
+                        <Border Classes="EquipmentCard">
+                            <CheckBox IsChecked="{Binding IsSelected}" Content="{Binding Label}" />
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Grid.Column="1">
+            <Border Classes="FormPanel">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Checkout Details" Classes="FormTitle" />
+
+                    <TextBlock Text="Student" Classes="FieldLabel" />
+                    <ComboBox ItemsSource="{Binding Students}"
+                              SelectedItem="{Binding SelectedStudent}"
+                              HorizontalAlignment="Stretch">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="models:Student">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <TextBlock Text="Expected Return Date" Classes="FieldLabel" />
+                    <DatePicker SelectedDate="{Binding ExpectedReturnDate}" HorizontalAlignment="Stretch" />
+
+                    <TextBlock Text="{Binding SelectedCount, StringFormat='Items selected: {0}'}" Classes="ItemSubtitle" />
+
+                    <Button Content="Check Out Selected Items"
+                            Command="{Binding CheckoutCommand}"
+                            Classes="PrimaryButton"
+                            HorizontalAlignment="Stretch" />
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringNotEmptyConverter.Instance}}"
+                               Foreground="{Binding IsError, Converter={x:Static conv:BoolToStatusBrushConverter.Instance}}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>
