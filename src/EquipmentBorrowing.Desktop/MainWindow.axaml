@@ -24,6 +24,9 @@
         <DataTemplate DataType="vm:MultiCheckoutViewModel">
             <views:MultiCheckoutView />
         </DataTemplate>
+        <DataTemplate DataType="vm:StudentHistoryViewModel">
+            <views:StudentHistoryView />
+        </DataTemplate>
     </Window.DataTemplates>
 
     <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,*">
@@ -48,6 +51,9 @@
             <Button Content="Multi Checkout"
                     Command="{Binding ShowMultiCheckoutCommand}"
                     Classes="NavButton" />
+            <Button Content="Student History"
+                    Command="{Binding ShowStudentHistoryCommand}"
+                    Classes="NavButton" />
         </StackPanel>
 
         <ContentControl Grid.Row="1" Grid.Column="1"
@@ -56,5 +62,6 @@
     </Grid>
 
 </Window>
+
 
 

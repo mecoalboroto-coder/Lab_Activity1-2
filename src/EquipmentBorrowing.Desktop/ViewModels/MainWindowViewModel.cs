@@ -10,6 +10,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly StudentsViewModel _studentsViewModel;
     private readonly EquipmentManagementViewModel _equipmentManagementViewModel;
     private readonly MultiCheckoutViewModel _multiCheckoutViewModel;
+    private readonly StudentHistoryViewModel _studentHistoryViewModel;
 
     [ObservableProperty]
     private ViewModelBase currentViewModel;
@@ -19,13 +20,15 @@ public partial class MainWindowViewModel : ViewModelBase
         BorrowingsViewModel borrowingsViewModel,
         StudentsViewModel studentsViewModel,
         EquipmentManagementViewModel equipmentManagementViewModel,
-        MultiCheckoutViewModel multiCheckoutViewModel)
+        MultiCheckoutViewModel multiCheckoutViewModel,
+        StudentHistoryViewModel studentHistoryViewModel)
     {
         _equipmentViewModel = equipmentViewModel;
         _borrowingsViewModel = borrowingsViewModel;
         _studentsViewModel = studentsViewModel;
         _equipmentManagementViewModel = equipmentManagementViewModel;
         _multiCheckoutViewModel = multiCheckoutViewModel;
+        _studentHistoryViewModel = studentHistoryViewModel;
 
         _equipmentViewModel.BorrowingCompleted += async (_, _) =>
         {
@@ -84,4 +87,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void ShowMultiCheckout() => CurrentViewModel = _multiCheckoutViewModel;
+
+    [RelayCommand]
+    private void ShowStudentHistory()
+    {
+        CurrentViewModel = _studentHistoryViewModel;
+        _ = _studentHistoryViewModel.RefreshCommand.ExecuteAsync(null);
+    }
 }
+
