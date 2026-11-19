@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -73,6 +73,7 @@ public partial class App : Avalonia.Application
 
         services.AddTransient<EquipmentViewModel>();
         services.AddTransient<BorrowingsViewModel>();
+        services.AddTransient<StudentsViewModel>();
         services.AddSingleton<MainWindowViewModel>();
     }
 

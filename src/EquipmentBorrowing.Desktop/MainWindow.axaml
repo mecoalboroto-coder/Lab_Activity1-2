@@ -1,19 +1,22 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
         xmlns:views="using:EquipmentBorrowing.Desktop.Views"
         x:Class="EquipmentBorrowing.Desktop.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Campus Equipment Borrowing System"
-        Width="960" Height="620"
-        MinWidth="760" MinHeight="480">
+        Width="960" Height="680"
+        MinWidth="760" MinHeight="520">
 
-        <Window.DataTemplates>
+    <Window.DataTemplates>
         <DataTemplate DataType="vm:EquipmentViewModel">
             <views:EquipmentView />
         </DataTemplate>
         <DataTemplate DataType="vm:BorrowingsViewModel">
             <views:BorrowingsView />
+        </DataTemplate>
+        <DataTemplate DataType="vm:StudentsViewModel">
+            <views:StudentsView />
         </DataTemplate>
     </Window.DataTemplates>
 
@@ -30,11 +33,14 @@
             <Button Content="Active Borrowings"
                     Command="{Binding ShowBorrowingsCommand}"
                     Classes="NavButton" />
+            <Button Content="Students"
+                    Command="{Binding ShowStudentsCommand}"
+                    Classes="NavButton" />
         </StackPanel>
 
         <ContentControl Grid.Row="1" Grid.Column="1"
-                         Content="{Binding CurrentViewModel}"
-                         Margin="20" />
+                        Content="{Binding CurrentViewModel}"
+                        Margin="20" />
     </Grid>
 
 </Window>
