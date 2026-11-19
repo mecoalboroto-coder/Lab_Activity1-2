@@ -1,0 +1,92 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:models="using:EquipmentBorrowing.Domain"
+             xmlns:conv="using:EquipmentBorrowing.Desktop.Converters"
+             x:Class="EquipmentBorrowing.Desktop.Views.EquipmentManagementView"
+             x:DataType="vm:EquipmentManagementViewModel">
+
+    <Grid ColumnDefinitions="*,320" RowDefinitions="Auto,*">
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Manage Equipment" Classes="SectionTitle" />
+
+        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,Auto,*" Margin="0,8,16,0">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                <TextBox Grid.Column="0"
+                         Text="{Binding SearchText}"
+                         Watermark="Search by identifier or name" />
+                <Button Grid.Column="1"
+                        Content="Refresh"
+                        Command="{Binding LoadCommand}"
+                        Margin="8,0,0,0" />
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                <TextBlock Text="Loading equipment..." IsVisible="{Binding IsLoading}" />
+                <TextBlock Text="{Binding EmptyMessage}"
+                           IsVisible="{Binding EmptyMessage, Converter={x:Static conv:StringNotEmptyConverter.Instance}}" />
+            </StackPanel>
+
+            <ListBox Grid.Row="2"
+                     ItemsSource="{Binding Items}"
+                     SelectedItem="{Binding SelectedItem}"
+                     Margin="0,8,0,0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="models:Equipment">
+                        <Border Classes="EquipmentCard">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" Classes="ItemTitle" />
+                                <TextBlock Text="{Binding Identifier, StringFormat='Identifier: {0}'}" Classes="ItemSubtitle" />
+                                <TextBlock Text="{Binding Description}" Classes="ItemSubtitle" />
+                                <TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}" Classes="ItemMeta" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Grid.Column="1">
+            <Border Classes="FormPanel">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Equipment Details" Classes="FormTitle" />
+
+                    <TextBlock Text="Identifier" Classes="FieldLabel" />
+                    <TextBox Text="{Binding Identifier}" />
+
+                    <TextBlock Text="Name" Classes="FieldLabel" />
+                    <TextBox Text="{Binding ItemName}" />
+
+                    <TextBlock Text="Description (optional)" Classes="FieldLabel" />
+                    <TextBox Text="{Binding Description}" />
+
+                    <TextBlock Text="Availability changes only through borrowing and returning."
+                               Classes="ItemMeta"
+                               TextWrapping="Wrap" />
+
+                    <Button Content="Register New Equipment"
+                            Command="{Binding RegisterCommand}"
+                            Classes="PrimaryButton"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Save Changes To Selected"
+                            Command="{Binding SaveCommand}"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Clear Form"
+                            Command="{Binding ClearCommand}"
+                            HorizontalAlignment="Stretch" />
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringNotEmptyConverter.Instance}}"
+                               Foreground="{Binding IsError, Converter={x:Static conv:BoolToStatusBrushConverter.Instance}}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>
