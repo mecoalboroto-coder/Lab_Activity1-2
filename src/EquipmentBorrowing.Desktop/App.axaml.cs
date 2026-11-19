@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -75,11 +76,13 @@ public partial class App : Avalonia.Application
 
     private static void ApplyMigrationsAndSeedData()
     {
-        var dbContextFactory = Services.GetRequiredService<IDbContextFactory<EquipmentBorrowingDbContext>>();
+        Task.Run(async () =>
+        {
+            var dbContextFactory = Services.GetRequiredService<IDbContextFactory<EquipmentBorrowingDbContext>>();
 
-        using var context = dbContextFactory.CreateDbContext();
-        context.Database.Migrate();
-
-        DatabaseSeeder.SeedAsync(context).GetAwaiter().GetResult();
+            await using var context = await dbContextFactory.CreateDbContextAsync();
+            await context.Database.MigrateAsync();
+            await DatabaseSeeder.SeedAsync(context);
+        }).GetAwaiter().GetResult();
     }
 }
