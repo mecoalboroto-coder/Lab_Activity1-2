@@ -6,7 +6,7 @@
              x:Class="EquipmentBorrowing.Desktop.Views.StudentsView"
              x:DataType="vm:StudentsViewModel">
 
-    <Grid ColumnDefinitions="2*,1*" RowDefinitions="Auto,*">
+    <Grid ColumnDefinitions="*,320" RowDefinitions="Auto,*">
 
         <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Students" Classes="SectionTitle" />
 
@@ -97,3 +97,4 @@
     </Grid>
 
 </UserControl>
+
