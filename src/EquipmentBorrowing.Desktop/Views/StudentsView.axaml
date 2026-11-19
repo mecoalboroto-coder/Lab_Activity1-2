@@ -1,0 +1,99 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:models="using:EquipmentBorrowing.Domain"
+             xmlns:conv="using:EquipmentBorrowing.Desktop.Converters"
+             x:Class="EquipmentBorrowing.Desktop.Views.StudentsView"
+             x:DataType="vm:StudentsViewModel">
+
+    <Grid ColumnDefinitions="2*,1*" RowDefinitions="Auto,*">
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Students" Classes="SectionTitle" />
+
+        <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,Auto,*" Margin="0,8,16,0">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                <TextBox Grid.Column="0"
+                         Text="{Binding SearchText}"
+                         Watermark="Search by name or student number" />
+                <Button Grid.Column="1"
+                        Content="Refresh"
+                        Command="{Binding LoadCommand}"
+                        Margin="8,0,0,0" />
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                <TextBlock Text="Loading students..." IsVisible="{Binding IsLoading}" />
+                <TextBlock Text="{Binding EmptyMessage}"
+                           IsVisible="{Binding EmptyMessage, Converter={x:Static conv:StringNotEmptyConverter.Instance}}" />
+            </StackPanel>
+
+            <ListBox Grid.Row="2"
+                     ItemsSource="{Binding Students}"
+                     SelectedItem="{Binding SelectedStudent}"
+                     Margin="0,8,0,0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="models:Student">
+                        <Border Classes="EquipmentCard">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" Classes="ItemTitle" />
+                                <TextBlock Text="{Binding StudentNumber, StringFormat='Student no: {0}'}" Classes="ItemSubtitle" />
+                                <TextBlock Text="{Binding IsAllowedToBorrow, StringFormat='Allowed to borrow: {0}'}" Classes="ItemMeta" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" Grid.Column="1">
+            <Border Classes="FormPanel">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Student Details" Classes="FormTitle" />
+
+                    <TextBlock Text="Student Number" Classes="FieldLabel" />
+                    <TextBox Text="{Binding StudentNumber}" />
+
+                    <TextBlock Text="Full Name" Classes="FieldLabel" />
+                    <TextBox Text="{Binding FullName}" />
+
+                    <TextBlock Text="Contact (optional)" Classes="FieldLabel" />
+                    <TextBox Text="{Binding Contact}" />
+
+                    <Button Content="Register New Student"
+                            Command="{Binding RegisterCommand}"
+                            Classes="PrimaryButton"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Save Changes To Selected"
+                            Command="{Binding SaveCommand}"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Clear Form"
+                            Command="{Binding ClearCommand}"
+                            HorizontalAlignment="Stretch" />
+
+                    <TextBlock Text="Borrowing Eligibility" Classes="FieldLabel" />
+                    <Grid ColumnDefinitions="*,8,*">
+                        <Button Grid.Column="0"
+                                Content="Permit"
+                                Command="{Binding PermitCommand}"
+                                HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="2"
+                                Content="Restrict"
+                                Command="{Binding RestrictCommand}"
+                                HorizontalAlignment="Stretch" />
+                    </Grid>
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringNotEmptyConverter.Instance}}"
+                               Foreground="{Binding IsError, Converter={x:Static conv:BoolToStatusBrushConverter.Instance}}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>
