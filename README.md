@@ -344,3 +344,147 @@ LINQ expression differently. `EquipmentBorrowing.Domain`, `EquipmentBorrowing.Ap
 and every View and ViewModel in `EquipmentBorrowing.Desktop` would require zero changes,
 for exactly the same reason the move from in-memory to SQLite required none of them to
 change either.
+
+---
+
+# Part 4 — Laboratory Activity 4 (PostgreSQL, Management, Multi-Item Checkout, Histories)
+
+> **Note:** Part 3 above describes the earlier SQLite version, which Laboratory Activity 4 supersedes. The operational database is now **PostgreSQL** via Npgsql, and the schema was regenerated as a single new `InitialCreate` migration. SQLite is no longer supported (not required by the brief). `docs/database-diagram.png` is the earlier SQLite-era diagram; the current schema is shown by the `\d` evidence in `docs/evidence`.
+
+**Team:** _Full name, student ID_ and _Full name, student ID_ (both partners submit individually).
+
+## 4.1 Prerequisites
+
+- .NET SDK 8 or later (projects target `net8.0`; developed with SDK 10.0.400)
+- PostgreSQL 16 or later (developed with 18) running locally, with `psql` on the PATH
+- `dotnet-ef` tool: `dotnet tool install --global dotnet-ef`
+
+## 4.2 Database setup
+
+```powershell
+psql -U postgres -h localhost -c "CREATE DATABASE equipment_borrowing;"
+psql -U postgres -h localhost -c "CREATE DATABASE equipment_borrowing_test;"
+```
+
+`equipment_borrowing` is the working database. `equipment_borrowing_test` is a **disposable** database for destructive demonstrations (rollback, integrity, failure). Never run those against a shared database.
+
+## 4.3 Secret-free configuration
+
+No credentials are committed. The connection string comes from **.NET user secrets**, and an **environment variable overrides it**.
+
+```powershell
+cd src\EquipmentBorrowing.Desktop
+dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=equipment_borrowing;Username=postgres;Password=<your password>"
+```
+
+Each partner runs this with their own password. To point one run at another database:
+
+```powershell
+$env:ConnectionStrings__Default = "Host=localhost;Port=5432;Database=equipment_borrowing_test;Username=postgres;Password=<your password>"
+```
+
+The design-time factory used by `dotnet ef` reads the same secret. If no connection string is configured the app stops with a message pointing here.
+
+## 4.4 Migrations
+
+One migration, `InitialCreate`, builds the full schema on a clean database:
+
+```powershell
+dotnet ef database update --project src\EquipmentBorrowing.Infrastructure --startup-project src\EquipmentBorrowing.Desktop
+```
+
+The app also applies pending migrations at startup. To rebuild from scratch (development only):
+
+```powershell
+psql -U postgres -h localhost -c "DROP DATABASE IF EXISTS equipment_borrowing WITH (FORCE);" -c "CREATE DATABASE equipment_borrowing;"
+```
+
+### Schema and constraints (BR-16)
+
+| Rule | Enforced in PostgreSQL by |
+|---|---|
+| Primary keys, identity ids | `PK_*`, identity columns on all three tables |
+| Borrowing refers to one student and one item (BR-14) | Foreign keys, `ON DELETE RESTRICT` (no hard deletes) |
+| Unique student number, trimmed, case-insensitive (BR-01) | Unique index `UX_Students_StudentNumber_Normalized` on `lower(btrim("StudentNumber"))` |
+| Unique equipment identifier, trimmed, case-insensitive (BR-05) | Unique index `UX_Equipment_Identifier_Normalized` on `lower(btrim("Identifier"))` |
+| Required, non-blank fields (BR-02, BR-06) | `CK_*_NotBlank` check constraints |
+| One active borrowing per item (BR-10) | Partial unique index `UX_Borrowings_EquipmentId_Active` where `"Status" = 'Active'` |
+| Expected return later than checkout (BR-11) | `CK_Borrowings_ExpectedReturn_After_Borrowed` |
+| Returned rows have a return date not before checkout (BR-13) | `CK_Borrowings_Status_ReturnedAt_Consistent` |
+
+The two normalized indexes are created with raw SQL inside the migration because EF Core 8 cannot declare expression indexes in the model. The application normalizes with the same trim rule, so validation and the database agree.
+
+## 4.5 Initial data
+
+`DatabaseSeeder` runs at startup and inserts sample data **only if the Students and Equipment tables are both empty**, so restarting never overwrites or duplicates data. Seed: three students (one restricted), four items (one unavailable), one active borrowing.
+
+## 4.6 Running
+
+```powershell
+dotnet build
+dotnet test
+dotnet run --project src\EquipmentBorrowing.Desktop
+```
+
+Screens: Equipment (borrow one item), Active Borrowings (return), Students, Manage Equipment, Multi Checkout, Student History, Equipment History, Search Borrowings.
+
+## 4.7 Architecture
+
+- **Views** are XAML only. **ViewModels** (CommunityToolkit.Mvvm) hold state and commands and call Application services or repository interfaces. Neither runs SQL, builds connections or applies migrations.
+- **Application** holds the use-case rules (`CheckoutPolicy`, `StudentManagementService`, `EquipmentManagementService`, `MultiCheckoutService`, `BorrowingHistoryService`) and the interfaces.
+- **Infrastructure** implements them with EF Core and Npgsql. Only `App.axaml.cs` (composition root) and the design-time factory know the provider and connection string.
+- In-memory repositories remain for the console demo and the unit tests.
+
+## 4.8 DbContext lifetime and dependency injection
+
+Repositories, the transaction class and the query class are **singletons**, but none holds a `DbContext`. Each holds a thread-safe `IDbContextFactory<EquipmentBorrowingDbContext>` and creates a short-lived context per operation, disposed with `await using`. A single shared context would be used concurrently by overlapping async commands (for example a history load during a checkout), which `DbContext` does not support, and a long-lived context would accumulate tracked entities and go stale. Reads use `AsNoTracking`. Services and ViewModels are transient, except the main window ViewModel.
+
+## 4.9 Transaction design (UC-03, UC-05, UC-06)
+
+`EfBorrowingTransactions` performs borrow, multi-item checkout and return in **one PostgreSQL transaction**:
+
+1. Lock the student row and the requested equipment rows with `SELECT ... FOR UPDATE` (items ordered by id).
+2. **Revalidate current state** (BR-15): student exists and is eligible, items exist, are distinct and available, active count plus requested items is at most three, return date is later than today.
+3. If valid, write every borrowing row and availability change, then commit once. Any rejection rolls back and changes nothing.
+
+Concurrency is protected twice: row locks serialize competing requests, and the partial unique index makes PostgreSQL itself reject a second active borrowing (a `23505` is reported as a conflict, nothing saved).
+
+Dates are local calendar dates (`DateTime.Now`) for BR-11 and BR-13.
+
+### Errors and unknown outcomes (BR-18)
+
+- Validation rejections and known failed writes give a clear reason, save nothing and never report success.
+- If the connection fails **during commit**, the result is `OutcomeUnknown`: the app says so, does **not** retry and does **not** claim a rollback, then refreshes so staff can verify the real state.
+- Messages never include connection strings or credentials.
+
+### Safe atomicity demonstration
+
+`IFailureInjector` is called after `SaveChangesAsync` has written the rows and before `CommitAsync`. It does nothing unless `EQUIPMENT_BORROWING_FAIL_BEFORE_COMMIT=1` is set. Use it only on the disposable database:
+
+```powershell
+$env:ConnectionStrings__Default = "Host=localhost;Port=5432;Database=equipment_borrowing_test;Username=postgres;Password=<your password>"
+$env:EQUIPMENT_BORROWING_FAIL_BEFORE_COMMIT = "1"
+dotnet run --project src\EquipmentBorrowing.Desktop
+```
+
+Attempt a multi-item checkout, then read the tables back through a fresh `psql` connection. They are unchanged, while `Borrowings_Id_seq` has advanced (sequence values are consumed even by rolled-back inserts), proving writes were attempted and rolled back. Captures are in `docs/evidence`. Remove both variables afterwards.
+
+## 4.10 Asynchronous loading and responsiveness
+
+Histories and borrowing search load through `async` calls and show loading, empty, missing-record and error states. Each ViewModel tags a load with a version number, so a slow earlier result cannot overwrite a newer one. Text search is debounced by 300 ms. Search uses `ILIKE` with `%` and `_` escaped (BR-17) and orders by the chosen date with the borrowing id as tie-breaker.
+
+## 4.11 Lesson learned: startup deadlock
+
+The first PostgreSQL run opened no window. Startup called `Migrate()` and the seeder with `.GetAwaiter().GetResult()` on Avalonia's UI thread. With SQLite the async calls completed synchronously; with Npgsql the continuations needed the blocked UI thread, so the app deadlocked. The fix runs migration and seeding on a thread-pool thread (`Task.Run`) before the window is created.
+
+## 4.12 Known limitations
+
+- Overdue views, maintenance, retirement and similar are deferred to Laboratory Activity 5, as specified.
+- Automated tests use the in-memory repositories; PostgreSQL behavior is verified by the documented manual and database evidence.
+
+## 4.13 Documentation index
+
+- `docs/use-case-catalog-and-suite.md`: updated catalog and the fourteen-case suite
+- `docs/traceability-and-evidence.md`: traceability matrix and A01 to A19 evidence
+- `docs/use-case-diagram.md`: use-case diagram
+- `docs/evidence/`: captured readbacks and screenshots
