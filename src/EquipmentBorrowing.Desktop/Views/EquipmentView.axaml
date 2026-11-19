@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
              xmlns:models="using:EquipmentBorrowing.Domain"
@@ -21,7 +21,7 @@
                             <TextBlock Text="{Binding Name}" Classes="ItemTitle" />
                             <TextBlock Text="{Binding Description}" Classes="ItemSubtitle" />
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" Classes="ItemMeta" />
+                                <TextBlock Text="{Binding Identifier, StringFormat='ID: {0}'}" Classes="ItemMeta" />
                                 <TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}" Classes="ItemMeta" />
                             </StackPanel>
                         </StackPanel>
@@ -66,3 +66,4 @@
     </Grid>
 
 </UserControl>
+
