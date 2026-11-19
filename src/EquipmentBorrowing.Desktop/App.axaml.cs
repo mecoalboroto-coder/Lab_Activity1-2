@@ -65,9 +65,11 @@ public partial class App : Avalonia.Application
         services.AddSingleton<IEquipmentRepository, EfEquipmentRepository>();
         services.AddSingleton<IBorrowingRepository, EfBorrowingRepository>();
         services.AddSingleton<IBorrowingTransactions, EfBorrowingTransactions>();
+        services.AddSingleton<IFailureInjector, EnvironmentFailureInjector>();
 
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();
+        services.AddTransient<MultiCheckoutService>();
         services.AddTransient<StudentManagementService>();
         services.AddTransient<EquipmentManagementService>();
 
@@ -90,4 +92,5 @@ public partial class App : Avalonia.Application
         }).GetAwaiter().GetResult();
     }
 }
+
 

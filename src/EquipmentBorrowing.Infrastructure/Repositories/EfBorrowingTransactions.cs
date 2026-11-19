@@ -1,4 +1,4 @@
-using EquipmentBorrowing.Application.Interfaces;
+﻿using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
@@ -20,10 +20,12 @@ public class EfBorrowingTransactions : IBorrowingTransactions
         "Another change conflicted with this request, so nothing was saved. The data has been refreshed.";
 
     private readonly IDbContextFactory<EquipmentBorrowingDbContext> _dbContextFactory;
+    private readonly IFailureInjector _failureInjector;
 
-    public EfBorrowingTransactions(IDbContextFactory<EquipmentBorrowingDbContext> dbContextFactory)
+    public EfBorrowingTransactions(IDbContextFactory<EquipmentBorrowingDbContext> dbContextFactory, IFailureInjector failureInjector)
     {
         _dbContextFactory = dbContextFactory;
+        _failureInjector = failureInjector;
     }
 
     public async Task<BorrowResult> CheckoutAsync(
@@ -73,6 +75,7 @@ public class EfBorrowingTransactions : IBorrowingTransactions
             }
 
             await context.SaveChangesAsync(cancellationToken);
+            _failureInjector.BeforeCommit();
 
             committing = true;
             await transaction.CommitAsync(cancellationToken);
