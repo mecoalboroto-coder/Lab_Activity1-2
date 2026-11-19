@@ -8,3 +8,9 @@ obj/
 *.db
 *.db-shm
 *.db-wal
+# Local run captures
+run-output.txt
+
+# Local secrets
+appsettings.Development.json
+secrets.json
