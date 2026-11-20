@@ -9,5 +9,5 @@ public sealed record OperationResult<T>(bool Success, string Message, T? Value, 
     public static OperationResult<T> Unknown(string message) => new(false, message, default, true);
 
     public static OperationResult<T> Validation(ArgumentException ex) =>
-        Failure(ex.Message.Split('\n')[0].Trim());
+        Failure(ex.Message.Split('\n')[0].Split(" (Parameter")[0].Trim());
 }
