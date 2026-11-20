@@ -1,0 +1,26 @@
+﻿ Id | StudentId | EquipmentId |  Status  
+----+-----------+-------------+----------
+  1 |         2 |           2 | Active
+  2 |         1 |           1 | Returned
+  3 |         1 |           1 | Active
+  4 |         1 |           3 | Active
+(4 rows)
+
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-100     | f
+  2 | EQ-101     | f
+  3 | EQ-102     | f
+  4 | EQ-103     | t
+  5 | EQ-200     | t
+(5 rows)
+
+ Id | StudentNumber |      Name      | IsAllowedToBorrow 
+----+---------------+----------------+-------------------
+  1 | 2024-0001     | Juan Dela Cruz | t
+  2 | 2024-0002     | Maria Santos   | t
+  3 | 2024-0003     | Pedro Reyes    | f
+  4 | 2024-0100     | Ana Lopez      | t
+  5 | 2024-0005     | Ana Lopez      | t
+(5 rows)
+

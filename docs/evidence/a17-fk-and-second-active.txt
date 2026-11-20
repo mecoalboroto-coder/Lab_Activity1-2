@@ -1,0 +1,18 @@
+﻿psql : ERROR:  duplicate key value violates unique constraint 
+"UX_Borrowings_EquipmentId_Active"
+At line:5 char:6
++ '@ | psql -U postgres -h localhost -d equipment_borrowing_test 2>&1 | ...
++      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR:  duplica...pmentId_Active" 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+DETAIL:  Key ("EquipmentId")=(1) already exists.
+ERROR:  duplicate key value violates unique constraint 
+"UX_Borrowings_EquipmentId_Active"
+DETAIL:  Key ("EquipmentId")=(2) already exists.
+ count 
+-------
+     3
+(1 row)
+
