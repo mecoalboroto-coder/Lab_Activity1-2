@@ -1,4 +1,4 @@
-﻿using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Application.Services;
@@ -6,7 +6,7 @@ namespace EquipmentBorrowing.Application.Services;
 public class BorrowingHistoryService
 {
     private const string FailedMessage =
-        "The borrowing records could not be loaded. Check that PostgreSQL is running, then press Refresh.";
+        "The borrowing records could not be loaded. Check that PostgreSQL is running, then try again.";
 
     private readonly IStudentRepository _students;
     private readonly IEquipmentRepository _equipment;
