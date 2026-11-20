@@ -351,8 +351,7 @@ change either.
 
 > **Note:** Part 3 above describes the earlier SQLite version, which Laboratory Activity 4 supersedes. The operational database is now **PostgreSQL** via Npgsql, and the schema was regenerated as a single new `InitialCreate` migration. SQLite is no longer supported (not required by the brief). `docs/database-diagram.png` is the earlier SQLite-era diagram; the current schema is shown by the `\d` evidence in `docs/evidence`.
 
-**Team:** _Full name, student ID_ and _Full name, student ID_ (both partners submit individually).
-
+**Team:** Meco D. Alboroto, 2023303263 and Ryan Osmena, 2023303263 
 ## 4.1 Prerequisites
 
 - .NET SDK 8 or later (projects target `net8.0`; developed with SDK 10.0.400)
