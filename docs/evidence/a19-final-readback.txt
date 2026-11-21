@@ -1,0 +1,26 @@
+﻿ Id | StudentNumber |      Name      | Contact | IsAllowedToBorrow 
+----+---------------+----------------+---------+-------------------
+  1 | 2024-0001     | Juan Dela Cruz |         | t
+  2 | 2024-0002     | Maria Santos   |         | t
+  3 | 2024-0003     | Pedro Reyes    |         | f
+  4 | 2024-0100     | Ana Lopez      |         | t
+  5 | 2024-0101     | Mecs Rosa      |         | t
+(5 rows)
+
+ Id | Identifier |        Name        | IsAvailable 
+----+------------+--------------------+-------------
+  1 | EQ-100     | Digital Multimeter | t
+  2 | EQ-101     | Oscilloscope       | f
+  3 | EQ-102     | Soldering Iron     | t
+  4 | EQ-103     | Function Generator | t
+  5 | EQ-200     | Logiz Analyzer     | t
+  6 | EQ-201     | Logic Identifier   | t
+(6 rows)
+
+ Id | StudentId | EquipmentId |  Status  | ReturnedAt 
+----+-----------+-------------+----------+------------
+  1 |         2 |           2 | Active   | 
+  2 |         4 |           1 | Returned | 2026-11-20
+  3 |         4 |           1 | Returned | 2026-11-21
+(3 rows)
+
