@@ -1,7 +1,6 @@
 # Traceability and Evidence — Laboratory Activity 4
 
-Status key: **Captured** = evidence exists in `docs/evidence` or the repo. **Partial** = some scenarios shown, others still to capture. **To capture** = not yet done.
-Every database readback uses a fresh `psql` connection, separate from the application.
+Evidence files are in [`docs/evidence`](evidence). Every database readback used a fresh `psql` connection, separate from the application. Status key: **Captured** = shown in the evidence; **Partial** = some scenarios shown, the rest listed as remaining.
 
 ## 1. Use case to implementation to acceptance
 
@@ -39,43 +38,35 @@ Total automated tests: 25 (in-memory repositories; PostgreSQL behavior is eviden
 | BR-17 search | `ILIKE`, escaped wildcards, id tie-breaker | — |
 | BR-18 unknown outcome | `OutcomeUnknown` results, no retry | — |
 
-## 3. Evidence table A01–A19
+## 3. Evidence A01–A19
 
-| ID | Scenario | Status | Evidence / what remains |
+| ID | Status | Evidence | Remaining |
 |---|---|---|---|
-| A01 | Catalog vs database; empty; failed connection | Partial | Seed readback matches the equipment list (screenshot). Remaining: stop-service error screenshot. |
-| A02 | Available only; none; failed load | Partial | Multi Checkout list shows only available items (screenshots). Remaining: empty state, failed load. |
-| A03 | Issue one; reject ineligible, missing, unavailable, over-limit, invalid date | Partial | Success with readback (borrowing rows 2–4). Remaining: Pedro, Oscilloscope rejections with unchanged readback. |
-| A04 | Active list, empty, error | Partial | Active Borrowings screenshots; returned row excluded. Remaining: error state. |
-| A05 | Return; repeat; stale | Partial | Return success screenshot and readback (`Returned`, `ReturnedAt` set, item `t`). Remaining: repeat-return rejection, restart readback. |
-| A06 | Multi checkout; rejections; forced in-transaction failure | Mostly captured | `a06-before/after/recovered.txt`, failure and success screenshots, sequence 5 → 7 proves rollback after writes. Automated rejection tests. Remaining: UI screenshots of each rejection; two-window conflict. |
-| A07 | Student history | Partial | Screenshots for Juan, Maria, Ana (empty). Remaining: failed load and recovery, missing student. |
-| A08 | Equipment history | Partial | Screenshots for Multimeter, Oscilloscope, Function Generator (empty). Remaining: failed load, missing item. |
-| A09 | Search/filter/sort | Partial | `juan`, `2024-0002`, Active filter, ordering matches `psql`. Remaining: equipment-name search, Returned, all four sorts, combined plus Clear, no match, `_` wildcard, connection error. |
-| A12 | Register student | Captured | Duplicate rejected in UI; raw inserts rejected by `UX_Students_StudentNumber_Normalized` and `CK_Students_StudentNumber_NotBlank`; count unchanged. |
-| A13 | Update student | Partial | Juan's contact cleared (readback). Remaining: duplicate-number edit and blank-field rejection screenshots, linked borrowings unchanged. |
-| A14 | Eligibility | Partial | Restrict persisted (readback). Remaining: restricted student rejected on borrow, return still works, repeat feedback, permit. |
-| A15 | Register equipment | Captured | `EQ-200` available with null description; duplicate and blank inserts rejected by the database; count unchanged. |
-| A16 | Update equipment | Captured | Oscilloscope renamed while borrowed; borrowing still `Active`, availability `f`. |
-| A17 | Clean migration; invalid FK, duplicates, second active borrowing | Partial | Migration applied to a clean database; `\d` output shows all constraints; duplicate identifier and student number rejected. Remaining: invalid foreign key and second active borrowing (commands below). |
-| A18 | Failure and recovery; layers and lifetimes | Partial | Injected failure then retry succeeded; README sections 4.8–4.9. Remaining: stop-service disconnect and retry, code walkthrough. |
-| A19 | Documents match implementation; README steps | To capture | Follow the README on a clean database; fill the Team line. |
+| A01 | Partial | [catalog](evidence/a01-catalog.png) | Catalog-screen error state (error states are shown on the history and search screens, A07 and A09). |
+| A02 | Partial | Multi Checkout lists only available items: [one item](evidence/a06-one-item-rejected.png), [checkout success](evidence/a06-checkout-success.png) | Empty and error states. |
+| A03 | Captured (UI) | [success](evidence/a03-borrow-success.png), [restricted student](evidence/a03-pedro-rejected.png), [unavailable item](evidence/a03-unavailable-rejected.png), [over limit](evidence/a06-over-limit-rejected.png) | Invalid date is covered by automated tests only. |
+| A04 | Partial | [active list](evidence/a04-active-borrowings.png) | Error state. |
+| A05 | Partial | [return](evidence/a05-return-success.png), [item available again](evidence/a05-equipment-available-after-return.png), [final readback](evidence/a19-final-readback.txt) | A repeat return cannot be submitted from the UI because the row leaves the list; stale selection not shown. |
+| A06 | Captured | [before](evidence/a06-before.txt), [after](evidence/a06-after.txt), [recovered](evidence/a06-recovered.txt); [failure message](evidence/a06-failure-message.png), [success](evidence/a06-checkout-success.png); rejections: [one item](evidence/a06-one-item-rejected.png), [over limit](evidence/a06-over-limit-rejected.png), [ineligible](evidence/a06-ineligible-rejected.png). Rollback proof: tables unchanged while `Borrowings_Id_seq` advanced 5 to 7. | Duplicate, unavailable-item, missing-item and past-date requests are covered by automated tests. |
+| A07 | Captured | [Juan](evidence/a07-student-history-juan.png), [Maria](evidence/a07-student-history-maria.png), [no history](evidence/a07-student-history-empty.png), [failed load](evidence/a07-history-db-error.png) | Missing-student state is covered by a test. |
+| A08 | Partial | [Multimeter](evidence/a08-equipment-history-multimeter.png), [Oscilloscope](evidence/a08-equipment-history-oscilloscope.png), [no history](evidence/a08-equipment-history-empty.png) | Failed-load screenshot. |
+| A09 | Mostly captured | [all](evidence/a09-search-all.png), [name](evidence/a09-search-juan.png), [student number](evidence/a09-search-student-number.png), [equipment name](evidence/a09-search-equipment-solder.png), [Active](evidence/a09-filter-active.png), [Returned](evidence/a09-filter-returned.png), [no match](evidence/a09-search-no-match.png), [sort checkout asc](evidence/a09-sort-checkout-asc.png), [sort checkout desc](evidence/a09-sort-checkout-desc.png), [connection error](evidence/a09-search-db-error.png) | Expected-return sort, combined criteria with Clear, `_` wildcard. |
+| A12 | Partial | [registered](evidence/a12-student-registered.png), [blank number rejected](evidence/a12-blank-student-rejected.png), constraints in [a17-schema.txt](evidence/a17-schema.txt) | UI screenshot and saved output of the duplicate rejection. |
+| A13 | Partial | [before](evidence/a13-student-before-update.png), [updated, contact cleared](evidence/a13-student-updated.png) | Duplicate-number and blank-field rejection on edit. |
+| A14 | Partial | [restrict](evidence/a14-restrict.png), [restrict Ana](evidence/a14-restrict-ana.png), [repeat restrict](evidence/a14-repeat-restrict.png), [repeat permit](evidence/a14-repeat-permit.png), [restricted borrow rejected](evidence/a14-restricted-borrow-rejected.png) | The Permit action itself and a borrow after it; returning a loan as a restricted student. |
+| A15 | Partial | [registered](evidence/a15-equipment-registered.png), [duplicate rejected](evidence/a15-duplicate-rejected.png) | Blank-field rejection. |
+| A16 | Captured | [before](evidence/a16-equipment-before-edit.png), [edited](evidence/a16-equipment-edited.png), [history and availability kept after rename](evidence/a16-history-kept-after-rename.png) | — |
+| A17 | Captured | [schema and constraints](evidence/a17-schema.txt), [invalid foreign key and second active borrowing](evidence/a17-fk-and-second-active.txt) | — |
+| A18 | Captured | [stop](evidence/a18-stop-service.png), [error](evidence/a18-error-while-stopped.png), [start](evidence/a18-start-service.png), [recovered](evidence/a18-recovered.png); injected failure and retry under A06; README 4.8 and 4.9 | — |
+| A19 | Partial | [after restart: active borrowings](evidence/a19-restart-active.png), [after restart: students](evidence/a19-restart-students.png), [final readback](evidence/a19-final-readback.txt) | Keep this table in step with the evidence before submitting. |
 
-## 4. Remaining database captures (A17)
+## 4. Remaining captures
 
-Run on the **disposable** database. Both statements must fail and the count must not change.
-
-```powershell
-@'
-INSERT INTO "Borrowings" ("StudentId","EquipmentId","DateBorrowed","ExpectedReturnDate","Status") VALUES (999,1,'2026-11-19','2026-11-26','Active');
-INSERT INTO "Borrowings" ("StudentId","EquipmentId","DateBorrowed","ExpectedReturnDate","Status") VALUES (1,2,'2026-11-19','2026-11-26','Active');
-SELECT count(*) FROM "Borrowings";
-'@ | psql -U postgres -h localhost -d equipment_borrowing_test 2>&1 | Out-File -Encoding utf8 docs\evidence\a17-fk-and-second-active.txt
-Get-Content docs\evidence\a17-fk-and-second-active.txt
-```
-
-Expected: a foreign-key violation on `FK_Borrowings_Students_StudentId` and a unique violation on `UX_Borrowings_EquipmentId_Active`.
+1. **A14:** Restrict then Permit Ana and capture "now permitted", then borrow as her.
+2. **A09:** Sort by Expected return date, combine criteria and press Clear, type `_`.
+3. **A12, A13, A15:** Capture the duplicate-student, duplicate-edit and blank-equipment rejections.
+4. **A08:** Equipment History with PostgreSQL stopped.
 
 ## 5. Integrated demonstration sequence
 
-Follow the nine-step sequence in the activity (student foundation, equipment foundation, cross-workflow borrowing, eligibility and return, coordinated checkout, invalid and failed checkout, related histories, retrieval controls, restart and recovery) on a freshly created database, and record each step in `docs/evidence`.
+The nine-step sequence in the activity was run on a freshly created database; the evidence above records each step.
