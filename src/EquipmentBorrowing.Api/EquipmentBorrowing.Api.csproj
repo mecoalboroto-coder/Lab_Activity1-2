@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\EquipmentBorrowing.Application\EquipmentBorrowing.Application.csproj" />
+    <ProjectReference Include="..\EquipmentBorrowing.Infrastructure\EquipmentBorrowing.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>6e3dd770-b1cb-4e90-adb5-94ce0724b6ba</UserSecretsId>
+  </PropertyGroup>
+
+</Project>
