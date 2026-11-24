@@ -1,14 +1,16 @@
-﻿using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Application.Interfaces;
 
 namespace EquipmentBorrowing.Application.Services;
 
 public class BorrowEquipmentService
 {
     private readonly IBorrowingTransactions _transactions;
+    private readonly IClock _clock;
 
-    public BorrowEquipmentService(IBorrowingTransactions transactions)
+    public BorrowEquipmentService(IBorrowingTransactions transactions, IClock? clock = null)
     {
         _transactions = transactions;
+        _clock = clock ?? new SystemClock();
     }
 
     public Task<BorrowResult> BorrowAsync(
@@ -17,11 +19,10 @@ public class BorrowEquipmentService
         DateOnly expectedReturnDate,
         CancellationToken cancellationToken = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.Now);
         return _transactions.CheckoutAsync(
             studentId,
             new[] { equipmentId },
-            today,
+            _clock.Today,
             expectedReturnDate,
             cancellationToken);
     }

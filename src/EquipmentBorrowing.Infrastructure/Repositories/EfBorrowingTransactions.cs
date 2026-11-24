@@ -1,4 +1,4 @@
-﻿using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
@@ -56,13 +56,13 @@ public class EfBorrowingTransactions : IBorrowingTransactions
                 b => b.StudentId == studentId && b.Status == BorrowingStatus.Active,
                 cancellationToken);
 
-            var error = CheckoutPolicy.Validate(
+            var violation = CheckoutPolicy.Validate(
                 student, equipmentIds, equipment, activeCount, checkoutDate, expectedReturnDate);
 
-            if (error is not null)
+            if (violation is not null)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return BorrowResult.Failed(error);
+                return BorrowResult.Failed(violation.Message, violation.Kind);
             }
 
             var created = new List<Borrowing>();
@@ -85,12 +85,14 @@ public class EfBorrowingTransactions : IBorrowingTransactions
         catch (DbUpdateException ex) when (!committing
             && ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
-            return BorrowResult.Failed(ConflictMessage);
+            return BorrowResult.Failed(ConflictMessage, FailureKind.Conflict);
         }
         catch (Exception ex) when (ex is NpgsqlException or DbUpdateException or IOException
             or TimeoutException or InvalidOperationException)
         {
-            return committing ? BorrowResult.Unknown(UnknownOutcomeMessage) : BorrowResult.Failed(FailedMessage);
+            return committing
+                ? BorrowResult.Unknown(UnknownOutcomeMessage)
+                : BorrowResult.Failed(FailedMessage, FailureKind.Server);
         }
     }
 
@@ -113,19 +115,19 @@ public class EfBorrowingTransactions : IBorrowingTransactions
             if (borrowing is null)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ReturnResult.Failed($"Borrowing {borrowingId} was not found. The list has been refreshed.");
+                return ReturnResult.Failed($"Borrowing {borrowingId} was not found. The list has been refreshed.", FailureKind.NotFound);
             }
 
             if (borrowing.Status == BorrowingStatus.Returned)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ReturnResult.Failed("This borrowing has already been returned.");
+                return ReturnResult.Failed("This borrowing has already been returned.", FailureKind.Conflict);
             }
 
             if (returnDate < borrowing.DateBorrowed)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ReturnResult.Failed("The return date cannot precede the checkout date.");
+                return ReturnResult.Failed("The return date cannot precede the checkout date.", FailureKind.Conflict);
             }
 
             var equipmentId = borrowing.EquipmentId;
@@ -136,7 +138,7 @@ public class EfBorrowingTransactions : IBorrowingTransactions
             if (equipment is null)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                return ReturnResult.Failed("The borrowed equipment record could not be found.");
+                return ReturnResult.Failed("The borrowed equipment record could not be found.", FailureKind.NotFound);
             }
 
             borrowing.MarkReturned(returnDate);
@@ -152,7 +154,9 @@ public class EfBorrowingTransactions : IBorrowingTransactions
         catch (Exception ex) when (ex is NpgsqlException or DbUpdateException or IOException
             or TimeoutException or InvalidOperationException)
         {
-            return committing ? ReturnResult.Unknown(UnknownOutcomeMessage) : ReturnResult.Failed(FailedMessage);
+            return committing
+                ? ReturnResult.Unknown(UnknownOutcomeMessage)
+                : ReturnResult.Failed(FailedMessage, FailureKind.Server);
         }
     }
 }

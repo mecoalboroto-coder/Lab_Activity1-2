@@ -12,6 +12,8 @@ public class EquipmentManagementService
         "The connection was lost while saving, so the result is unknown. " +
         "The request was not retried. Refresh and check the equipment record before trying again.";
 
+    private const string MissingMessage = "That item no longer exists. The list has been refreshed.";
+
     private readonly IEquipmentRepository _equipment;
 
     public EquipmentManagementService(IEquipmentRepository equipment)
@@ -30,7 +32,7 @@ public class EquipmentManagementService
             var item = new Equipment(identifier ?? string.Empty, name ?? string.Empty, description);
 
             if (await _equipment.IdentifierExistsAsync(item.Identifier, null, cancellationToken))
-                return OperationResult<Equipment>.Failure(DuplicateMessage(item.Identifier));
+                return OperationResult<Equipment>.Failure(DuplicateMessage(item.Identifier), FailureKind.Conflict);
 
             await _equipment.AddAsync(item, cancellationToken);
             return OperationResult<Equipment>.Ok(item, $"Registered equipment '{item.Name}' as available.");
@@ -41,17 +43,17 @@ public class EquipmentManagementService
         }
         catch (DuplicateValueException ex)
         {
-            return OperationResult<Equipment>.Failure(ex.Message);
+            return OperationResult<Equipment>.Failure(ex.Message, FailureKind.Conflict);
         }
         catch (DataAccessException ex)
         {
             return ex.OutcomeUnknown
                 ? OperationResult<Equipment>.Unknown(UnknownMessage)
-                : OperationResult<Equipment>.Failure(FailedMessage);
+                : OperationResult<Equipment>.Failure(FailedMessage, FailureKind.Server);
         }
         catch (Exception)
         {
-            return OperationResult<Equipment>.Failure(FailedMessage);
+            return OperationResult<Equipment>.Failure(FailedMessage, FailureKind.Server);
         }
     }
 
@@ -67,17 +69,17 @@ public class EquipmentManagementService
             var normalized = Equipment.NormalizeIdentifier(identifier);
 
             if (await _equipment.IdentifierExistsAsync(normalized, id, cancellationToken))
-                return OperationResult<Equipment>.Failure(DuplicateMessage(normalized));
+                return OperationResult<Equipment>.Failure(DuplicateMessage(normalized), FailureKind.Conflict);
 
             var found = await _equipment.UpdateDetailsAsync(
                 id, identifier ?? string.Empty, name ?? string.Empty, description, cancellationToken);
 
             if (!found)
-                return OperationResult<Equipment>.Failure("That item no longer exists. The list has been refreshed.");
+                return OperationResult<Equipment>.Failure(MissingMessage, FailureKind.NotFound);
 
             var saved = await _equipment.GetByIdAsync(id, cancellationToken);
             return saved is null
-                ? OperationResult<Equipment>.Failure("That item no longer exists. The list has been refreshed.")
+                ? OperationResult<Equipment>.Failure(MissingMessage, FailureKind.NotFound)
                 : OperationResult<Equipment>.Ok(saved, $"Updated equipment '{saved.Name}'.");
         }
         catch (ArgumentException ex)
@@ -86,17 +88,17 @@ public class EquipmentManagementService
         }
         catch (DuplicateValueException ex)
         {
-            return OperationResult<Equipment>.Failure(ex.Message);
+            return OperationResult<Equipment>.Failure(ex.Message, FailureKind.Conflict);
         }
         catch (DataAccessException ex)
         {
             return ex.OutcomeUnknown
                 ? OperationResult<Equipment>.Unknown(UnknownMessage)
-                : OperationResult<Equipment>.Failure(FailedMessage);
+                : OperationResult<Equipment>.Failure(FailedMessage, FailureKind.Server);
         }
         catch (Exception)
         {
-            return OperationResult<Equipment>.Failure(FailedMessage);
+            return OperationResult<Equipment>.Failure(FailedMessage, FailureKind.Server);
         }
     }
 

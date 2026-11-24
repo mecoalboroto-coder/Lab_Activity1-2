@@ -12,6 +12,8 @@ public class StudentManagementService
         "The connection was lost while saving, so the result is unknown. " +
         "The request was not retried. Refresh and check the student record before trying again.";
 
+    private const string MissingMessage = "That student no longer exists. The list has been refreshed.";
+
     private readonly IStudentRepository _students;
 
     public StudentManagementService(IStudentRepository students)
@@ -30,7 +32,7 @@ public class StudentManagementService
             var student = new Student(studentNumber ?? string.Empty, name ?? string.Empty, contact);
 
             if (await _students.NumberExistsAsync(student.StudentNumber, null, cancellationToken))
-                return OperationResult<Student>.Failure(DuplicateMessage(student.StudentNumber));
+                return OperationResult<Student>.Failure(DuplicateMessage(student.StudentNumber), FailureKind.Conflict);
 
             await _students.AddAsync(student, cancellationToken);
             return OperationResult<Student>.Ok(student, $"Registered student '{student.Name}'.");
@@ -41,17 +43,17 @@ public class StudentManagementService
         }
         catch (DuplicateValueException ex)
         {
-            return OperationResult<Student>.Failure(ex.Message);
+            return OperationResult<Student>.Failure(ex.Message, FailureKind.Conflict);
         }
         catch (DataAccessException ex)
         {
             return ex.OutcomeUnknown
                 ? OperationResult<Student>.Unknown(UnknownMessage)
-                : OperationResult<Student>.Failure(FailedMessage);
+                : OperationResult<Student>.Failure(FailedMessage, FailureKind.Server);
         }
         catch (Exception)
         {
-            return OperationResult<Student>.Failure(FailedMessage);
+            return OperationResult<Student>.Failure(FailedMessage, FailureKind.Server);
         }
     }
 
@@ -67,17 +69,17 @@ public class StudentManagementService
             var normalized = Student.NormalizeStudentNumber(studentNumber);
 
             if (await _students.NumberExistsAsync(normalized, id, cancellationToken))
-                return OperationResult<Student>.Failure(DuplicateMessage(normalized));
+                return OperationResult<Student>.Failure(DuplicateMessage(normalized), FailureKind.Conflict);
 
             var found = await _students.UpdateDetailsAsync(
                 id, studentNumber ?? string.Empty, name ?? string.Empty, contact, cancellationToken);
 
             if (!found)
-                return OperationResult<Student>.Failure("That student no longer exists. The list has been refreshed.");
+                return OperationResult<Student>.Failure(MissingMessage, FailureKind.NotFound);
 
             var saved = await _students.GetByIdAsync(id, cancellationToken);
             return saved is null
-                ? OperationResult<Student>.Failure("That student no longer exists. The list has been refreshed.")
+                ? OperationResult<Student>.Failure(MissingMessage, FailureKind.NotFound)
                 : OperationResult<Student>.Ok(saved, $"Updated student '{saved.Name}'.");
         }
         catch (ArgumentException ex)
@@ -86,17 +88,17 @@ public class StudentManagementService
         }
         catch (DuplicateValueException ex)
         {
-            return OperationResult<Student>.Failure(ex.Message);
+            return OperationResult<Student>.Failure(ex.Message, FailureKind.Conflict);
         }
         catch (DataAccessException ex)
         {
             return ex.OutcomeUnknown
                 ? OperationResult<Student>.Unknown(UnknownMessage)
-                : OperationResult<Student>.Failure(FailedMessage);
+                : OperationResult<Student>.Failure(FailedMessage, FailureKind.Server);
         }
         catch (Exception)
         {
-            return OperationResult<Student>.Failure(FailedMessage);
+            return OperationResult<Student>.Failure(FailedMessage, FailureKind.Server);
         }
     }
 
@@ -110,11 +112,11 @@ public class StudentManagementService
             var change = await _students.SetEligibilityAsync(id, allowed, cancellationToken);
 
             if (change == EligibilityChange.NotFound)
-                return OperationResult<Student>.Failure("That student no longer exists. The list has been refreshed.");
+                return OperationResult<Student>.Failure(MissingMessage, FailureKind.NotFound);
 
             var student = await _students.GetByIdAsync(id, cancellationToken);
             if (student is null)
-                return OperationResult<Student>.Failure("That student no longer exists. The list has been refreshed.");
+                return OperationResult<Student>.Failure(MissingMessage, FailureKind.NotFound);
 
             var state = allowed ? "permitted to borrow" : "restricted from borrowing";
 
@@ -126,11 +128,11 @@ public class StudentManagementService
         {
             return ex.OutcomeUnknown
                 ? OperationResult<Student>.Unknown(UnknownMessage)
-                : OperationResult<Student>.Failure(FailedMessage);
+                : OperationResult<Student>.Failure(FailedMessage, FailureKind.Server);
         }
         catch (Exception)
         {
-            return OperationResult<Student>.Failure(FailedMessage);
+            return OperationResult<Student>.Failure(FailedMessage, FailureKind.Server);
         }
     }
 

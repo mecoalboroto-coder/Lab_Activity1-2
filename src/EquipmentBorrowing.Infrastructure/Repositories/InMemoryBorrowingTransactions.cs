@@ -39,11 +39,11 @@ public class InMemoryBorrowingTransactions : IBorrowingTransactions
 
         var activeCount = await _borrowings.CountActiveByStudentAsync(studentId, cancellationToken);
 
-        var error = CheckoutPolicy.Validate(
+        var violation = CheckoutPolicy.Validate(
             student, equipmentIds, found, activeCount, checkoutDate, expectedReturnDate);
 
-        if (error is not null)
-            return BorrowResult.Failed(error);
+        if (violation is not null)
+            return BorrowResult.Failed(violation.Message, violation.Kind);
 
         var created = new List<Borrowing>();
         foreach (var item in found)
@@ -67,13 +67,13 @@ public class InMemoryBorrowingTransactions : IBorrowingTransactions
         var borrowing = await _borrowings.GetByIdAsync(borrowingId, cancellationToken);
 
         if (borrowing is null)
-            return ReturnResult.Failed($"Borrowing {borrowingId} was not found.");
+            return ReturnResult.Failed($"Borrowing {borrowingId} was not found.", FailureKind.NotFound);
 
         if (borrowing.Status == BorrowingStatus.Returned)
-            return ReturnResult.Failed("This borrowing has already been returned.");
+            return ReturnResult.Failed("This borrowing has already been returned.", FailureKind.Conflict);
 
         if (returnDate < borrowing.DateBorrowed)
-            return ReturnResult.Failed("The return date cannot precede the checkout date.");
+            return ReturnResult.Failed("The return date cannot precede the checkout date.", FailureKind.Conflict);
 
         borrowing.MarkReturned(returnDate);
         await _borrowings.UpdateAsync(borrowing, cancellationToken);
