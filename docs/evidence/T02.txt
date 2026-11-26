@@ -1,0 +1,185 @@
+﻿T02 run at 2026-11-27 06:07:04 +08:00
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+--- PostgreSQL (equipment_borrowing_test): before, 06:07:07 ---
+ Id | StudentNumber |   Name   | Contact | IsAllowedToBorrow 
+----+---------------+----------+---------+-------------------
+  1 | ST-100        | Ada Cruz |         | t
+  2 | ST-200        | Ben Diaz |         | f
+  3 | ST-300        | Cara Lim |         | t
+  4 | ST-400        | Dani Ong |         | t
+(4 rows)
+
+ Id | StudentNumber | Identifier | IsAvailable |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+-------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-003     | t           | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 | ST-100        | EQ-001     | f           | Active   | 2026-11-01   | 2026-11-09         | 
+  3 | ST-300        | EQ-005     | f           | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-004     | f           | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+POST http://localhost:5171/api/v1/students
+Request: {"studentNumber":"ST-500","fullName":"Eva Santos","contact":null}
+Status: 201
+Location: /api/v1/students/5
+Body: {"id":5,"studentNumber":"ST-500","fullName":"Eva Santos","contact":null,"isEligible":true}
+[PASS] expected status 201
+[PASS] 201 includes Location
+
+GET http://localhost:5171/api/v1/students/5
+Status: 200
+Body: {"id":5,"studentNumber":"ST-500","fullName":"Eva Santos","contact":null,"isEligible":true}
+[PASS] expected status 200
+[PASS] Location returns ST-500, eligible, no contact
+
+PUT http://localhost:5171/api/v1/students/5
+Request: {"studentNumber":"ST-500","fullName":"Eva Santos-Reyes","contact":"eva@example.com"}
+Status: 200
+Body: {"id":5,"studentNumber":"ST-500","fullName":"Eva Santos-Reyes","contact":"eva@example.com","isEligible":true}
+[PASS] expected status 200
+[PASS] name and contact changed
+
+POST http://localhost:5171/api/v1/students
+Request: {"studentNumber":"ST-501","fullName":"   ","contact":null}
+Status: 400
+Body: {"code":"validation_failed","message":"Student name is required."}
+[PASS] expected status 400
+
+POST http://localhost:5171/api/v1/students
+Request: {"studentNumber":" st-100 ","fullName":"Duplicate","contact":null}
+Status: 409
+Body: {"code":"conflict","message":"A student with number 'st-100' already exists (numbers are compared ignoring case and surrounding spaces). No changes were made."}
+[PASS] expected status 409
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true},{"id":5,"studentNumber":"ST-500","fullName":"Eva Santos-Reyes","contact":"eva@example.com","isEligible":true}]
+[PASS] expected status 200
+[PASS] rejected requests added no students (five total)
+
+PATCH http://localhost:5171/api/v1/students/1/eligibility
+Request: {"isEligible":false}
+Status: 200
+Body: {"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":false}
+[PASS] expected status 200
+[PASS] S1 restricted
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":1,"equipmentId":2,"expectedReturnDate":"2026-11-12"}
+Status: 409
+Body: {"code":"conflict","message":"Student 'Ada Cruz' is not currently allowed to borrow equipment."}
+[PASS] expected status 409
+
+GET http://localhost:5171/api/v1/students/1/borrowings
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] restriction kept history and the active loan
+
+POST http://localhost:5171/api/v1/borrowings/2/return
+Request: {}
+Status: 200
+Body: {"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}
+[PASS] expected status 200
+[PASS] E1 returned on the fixed date 2026-11-10
+
+PATCH http://localhost:5171/api/v1/students/1/eligibility
+Request: {"isEligible":true}
+Status: 200
+Body: {"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true}
+[PASS] expected status 200
+[PASS] S1 permitted
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":1,"equipmentId":2,"expectedReturnDate":"2026-11-12"}
+Status: 201
+Location: /api/v1/borrowings/5
+Body: {"id":5,"studentId":1,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 201
+[PASS] new issue dated 2026-11-10
+
+GET http://localhost:5171/api/v1/students/1/borrowings
+Status: 200
+Body: [{"id":5,"studentId":1,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+
+PATCH http://localhost:5171/api/v1/students/1/eligibility
+Request: {"isEligible":true}
+Status: 200
+Body: {"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true}
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/students/1/borrowings
+Status: 200
+Body: [{"id":5,"studentId":1,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] repeating eligibility left history unchanged
+[PASS] S1 history has three records
+
+--- PostgreSQL (equipment_borrowing_test): after, 06:07:19 ---
+ Id | StudentNumber |       Name       |     Contact     | IsAllowedToBorrow 
+----+---------------+------------------+-----------------+-------------------
+  1 | ST-100        | Ada Cruz         |                 | t
+  2 | ST-200        | Ben Diaz         |                 | f
+  3 | ST-300        | Cara Lim         |                 | t
+  4 | ST-400        | Dani Ong         |                 | t
+  5 | ST-500        | Eva Santos-Reyes | eva@example.com | t
+(5 rows)
+
+ Id | StudentNumber | Identifier | IsAvailable |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+-------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-003     | t           | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 | ST-100        | EQ-001     | t           | Returned | 2026-11-01   | 2026-11-09         | 2026-11-10
+  3 | ST-300        | EQ-005     | f           | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-004     | f           | Active   | 2026-11-03   | 2026-11-12         | 
+  5 | ST-100        | EQ-002     | f           | Active   | 2026-11-10   | 2026-11-12         | 
+(5 rows)
+
+
+All T02 script checks passed.
+
+=== After API restart, 2026-11-27 06:07:34 +08:00 ===
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true},{"id":5,"studentNumber":"ST-500","fullName":"Eva Santos-Reyes","contact":"eva@example.com","isEligible":true}]
+[PASS] expected status 200
+[PASS] ST-500 edits survived restart
+
+GET http://localhost:5171/api/v1/students/1/borrowings
+Status: 200
+Body: [{"id":5,"studentId":1,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] S1 history has three records after restart
+
+--- PostgreSQL (equipment_borrowing_test): after restart, 06:07:35 ---
+ Id | StudentNumber |       Name       |     Contact     | IsAllowedToBorrow 
+----+---------------+------------------+-----------------+-------------------
+  1 | ST-100        | Ada Cruz         |                 | t
+  2 | ST-200        | Ben Diaz         |                 | f
+  3 | ST-300        | Cara Lim         |                 | t
+  4 | ST-400        | Dani Ong         |                 | t
+  5 | ST-500        | Eva Santos-Reyes | eva@example.com | t
+(5 rows)
+
+ Id | StudentNumber | Identifier | IsAvailable |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+-------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-003     | t           | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 | ST-100        | EQ-001     | t           | Returned | 2026-11-01   | 2026-11-09         | 2026-11-10
+  3 | ST-300        | EQ-005     | f           | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-004     | f           | Active   | 2026-11-03   | 2026-11-12         | 
+  5 | ST-100        | EQ-002     | f           | Active   | 2026-11-10   | 2026-11-12         | 
+(5 rows)
+
+
+All T02 script checks passed.
