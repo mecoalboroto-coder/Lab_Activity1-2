@@ -1,4 +1,4 @@
-using EquipmentBorrowing.Application.Interfaces;
+﻿using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
@@ -141,6 +141,7 @@ public class EfBorrowingTransactions : IBorrowingTransactions
                 return ReturnResult.Failed("The borrowed equipment record could not be found.", FailureKind.NotFound);
             }
 
+            await context.Entry(borrowing).Reference(b => b.Student).LoadAsync(cancellationToken);
             borrowing.MarkReturned(returnDate);
             equipment.MarkAvailable();
 
