@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using EquipmentBorrowing.Api;
 using EquipmentBorrowing.Api.Endpoints;
 using EquipmentBorrowing.Application.Interfaces;
@@ -44,6 +44,8 @@ builder.Services.AddTransient<BorrowingHistoryService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Campus Equipment Borrowing API", Version = "v1" }));
+
+builder.Services.AddSwaggerGen(options => options.DocumentFilter<ContractDocumentFilter>());
 
 var app = builder.Build();
 

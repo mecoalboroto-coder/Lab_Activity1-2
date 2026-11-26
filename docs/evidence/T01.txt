@@ -1,4 +1,4 @@
-﻿T01 run at 2026-11-27 05:46:06 +08:00
+﻿T01 run at 2026-11-27 05:57:02 +08:00
 
 GET http://localhost:5171/api/v1/equipment
 Status: 200

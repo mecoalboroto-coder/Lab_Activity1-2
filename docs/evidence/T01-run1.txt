@@ -1,0 +1,130 @@
+﻿T01 run at 2026-11-27 05:46:06 +08:00
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+[PASS] all seven items
+
+GET http://localhost:5171/api/v1/equipment?available=true
+Status: 200
+Body: [{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+[PASS] available excludes EQ-001, EQ-004, EQ-005
+
+GET http://localhost:5171/api/v1/equipment?available=maybe
+Status: 400
+Body: {"code":"invalid_query","message":"Query parameter 'available' must be true or false."}
+[PASS] expected status 400
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+[PASS] four students
+
+GET http://localhost:5171/api/v1/students/1
+Status: 200
+Body: {"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true}
+[PASS] expected status 200
+[PASS] S1 is Ada Cruz
+
+GET http://localhost:5171/api/v1/equipment/1
+Status: 200
+Body: {"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false}
+[PASS] expected status 200
+[PASS] E1 is unavailable
+
+GET http://localhost:5171/api/v1/students/1/borrowings
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] S1 history has EQ-001 and EQ-003
+
+GET http://localhost:5171/api/v1/borrowings/2
+Status: 200
+Body: {"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}
+[PASS] expected status 200
+[PASS] known borrowing is Active, 2026-11-01 to 2026-11-09
+
+GET http://localhost:5171/api/v1/equipment/1/borrowings
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] E1 history has one record for ST-100
+
+GET http://localhost:5171/api/v1/borrowings?status=Active
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] active borrowings are EQ-001, EQ-004, EQ-005
+
+GET http://localhost:5171/api/v1/students/4/borrowings
+Status: 200
+Body: []
+[PASS] expected status 200
+[PASS] S4 history is []
+
+GET http://localhost:5171/api/v1/equipment/2/borrowings
+Status: 200
+Body: []
+[PASS] expected status 200
+[PASS] E2 history is []
+
+GET http://localhost:5171/api/v1/students/999999
+Status: 404
+Body: {"code":"not_found","message":"Student 999999 was not found."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/equipment/999999
+Status: 404
+Body: {"code":"not_found","message":"Equipment 999999 was not found."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/borrowings/999999
+Status: 404
+Body: {"code":"not_found","message":"Borrowing 999999 was not found."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/students/999999/borrowings
+Status: 404
+Body: {"code":"not_found","message":"Student 999999 was not found."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/equipment/999999/borrowings
+Status: 404
+Body: {"code":"not_found","message":"Equipment 999999 was not found."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/nothing
+Status: 404
+Body: {"code":"not_found","message":"The requested resource was not found."}
+[PASS] expected status 404
+
+DELETE http://localhost:5171/api/v1/students
+Status: 405
+Body: {"code":"method_not_allowed","message":"That HTTP method is not supported for this route."}
+[PASS] expected status 405
+
+GET http://localhost:5171/swagger/v1/swagger.json
+Status: 200 (saved to docs/openapi.json)
+[PASS] OpenAPI document retrieved
+  GET /api/v1/borrowings/{id}  responses: 200,404,500
+  GET /api/v1/borrowings  responses: 200,400,500
+  POST /api/v1/borrowings  responses: 201,400,404,409,500
+  POST /api/v1/checkout-requests  responses: 201,400,404,409,500
+  POST /api/v1/borrowings/{id}/return  responses: 200,400,404,409,500
+  GET /api/v1/equipment  responses: 200,400,500
+  POST /api/v1/equipment  responses: 201,400,409,500
+  GET /api/v1/equipment/{id}  responses: 200,404,500
+  PUT /api/v1/equipment/{id}  responses: 200,400,404,409,500
+  GET /api/v1/equipment/{id}/borrowings  responses: 200,404,500
+  GET /api/v1/students  responses: 200,400,500
+  POST /api/v1/students  responses: 201,400,409,500
+  GET /api/v1/students/{id}  responses: 200,404,500
+  PUT /api/v1/students/{id}  responses: 200,400,404,409,500
+  GET /api/v1/students/{id}/borrowings  responses: 200,404,500
+  PATCH /api/v1/students/{id}/eligibility  responses: 200,400,404,500
+[PASS] sixteen operations published (found 16)
+
+All T01 script checks passed.

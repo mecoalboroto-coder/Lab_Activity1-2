@@ -76,21 +76,37 @@
             "name": "status",
             "in": "query",
             "schema": {
-              "type": "string"
+              "enum": [
+                "Active",
+                "Returned",
+                "All"
+              ],
+              "type": "string",
+              "default": "All"
             }
           },
           {
             "name": "sort",
             "in": "query",
             "schema": {
-              "type": "string"
+              "enum": [
+                "borrowedDate",
+                "expectedReturnDate"
+              ],
+              "type": "string",
+              "default": "borrowedDate"
             }
           },
           {
             "name": "direction",
             "in": "query",
             "schema": {
-              "type": "string"
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "default": "asc"
             }
           }
         ],
@@ -149,6 +165,14 @@
         "responses": {
           "201": {
             "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "URL of the created resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -365,7 +389,7 @@
             "name": "available",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "boolean"
             }
           }
         ],
@@ -424,6 +448,14 @@
         "responses": {
           "201": {
             "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "URL of the created resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -723,6 +755,14 @@
         "responses": {
           "201": {
             "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "URL of the created resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1027,27 +1067,38 @@
   "components": {
     "schemas": {
       "BorrowRequest": {
+        "required": [
+          "studentId",
+          "equipmentId",
+          "expectedReturnDate"
+        ],
         "type": "object",
         "properties": {
           "studentId": {
             "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "format": "int32"
           },
           "equipmentId": {
             "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "format": "int32"
           },
           "expectedReturnDate": {
             "type": "string",
-            "format": "date",
-            "nullable": true
+            "format": "date"
           }
         },
         "additionalProperties": false
       },
       "BorrowingDto": {
+        "required": [
+          "id",
+          "studentId",
+          "equipmentId",
+          "borrowedDate",
+          "expectedReturnDate",
+          "returnedDate",
+          "status"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -1076,71 +1127,78 @@
             "nullable": true
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "enum": [
+              "Active",
+              "Returned"
+            ],
+            "type": "string"
           },
           "studentNumber": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "studentName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "equipmentCode": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "equipmentName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "CheckoutRequest": {
+        "required": [
+          "studentId",
+          "equipmentIds",
+          "expectedReturnDate"
+        ],
         "type": "object",
         "properties": {
           "studentId": {
             "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "format": "int32"
           },
           "equipmentIds": {
+            "minItems": 2,
+            "uniqueItems": true,
             "type": "array",
             "items": {
               "type": "integer",
               "format": "int32"
-            },
-            "nullable": true
+            }
           },
           "expectedReturnDate": {
             "type": "string",
-            "format": "date",
-            "nullable": true
+            "format": "date"
           }
         },
         "additionalProperties": false
       },
       "CheckoutResponse": {
+        "required": [
+          "borrowings"
+        ],
         "type": "object",
         "properties": {
           "borrowings": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BorrowingDto"
-            },
-            "nullable": true
+            }
           }
         },
         "additionalProperties": false
       },
       "EligibilityRequest": {
+        "required": [
+          "isEligible"
+        ],
         "type": "object",
         "properties": {
           "isEligible": {
-            "type": "boolean",
-            "nullable": true
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -1150,6 +1208,13 @@
         "additionalProperties": false
       },
       "EquipmentDto": {
+        "required": [
+          "id",
+          "equipmentCode",
+          "name",
+          "description",
+          "isAvailable"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -1157,12 +1222,10 @@
             "format": "int32"
           },
           "equipmentCode": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "name": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "description": {
             "type": "string",
@@ -1175,15 +1238,17 @@
         "additionalProperties": false
       },
       "EquipmentRequest": {
+        "required": [
+          "equipmentCode",
+          "name"
+        ],
         "type": "object",
         "properties": {
           "equipmentCode": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "name": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "description": {
             "type": "string",
@@ -1193,20 +1258,29 @@
         "additionalProperties": false
       },
       "ErrorBody": {
+        "required": [
+          "code",
+          "message"
+        ],
         "type": "object",
         "properties": {
           "code": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "message": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "StudentDto": {
+        "required": [
+          "id",
+          "studentNumber",
+          "fullName",
+          "contact",
+          "isEligible"
+        ],
         "type": "object",
         "properties": {
           "id": {
@@ -1214,12 +1288,10 @@
             "format": "int32"
           },
           "studentNumber": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "fullName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "contact": {
             "type": "string",
@@ -1232,15 +1304,17 @@
         "additionalProperties": false
       },
       "StudentRequest": {
+        "required": [
+          "studentNumber",
+          "fullName"
+        ],
         "type": "object",
         "properties": {
           "studentNumber": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "fullName": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "contact": {
             "type": "string",
