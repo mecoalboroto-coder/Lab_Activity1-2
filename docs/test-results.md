@@ -12,3 +12,29 @@
 | Correction | Added `ContractDocumentFilter` (`src/EquipmentBorrowing.Api`) and registered it in `Program.cs`. |
 | Retest outcome | Script checks passed; the regenerated `docs/openapi.json` was reviewed and the four issues are corrected. **Pass** |
 | Evidence reference | Run 1: `docs/evidence/T01-run1.txt`, `docs/evidence/openapi-run1.json`. Retest: `docs/evidence/T01.txt`, `docs/openapi.json`. Database counts (4 students, 7 equipment, 4 borrowings, 3 active): pgAdmin screenshot. |
+
+## T02: Student management and eligibility
+
+| Field | Entry |
+|---|---|
+| Test ID / date / environment | T02, 2026-11-27. Same environment as T01; dataset reset before the run; fixed application date 2026-11-10. |
+| Expected result | Create returns 201 with `Location`; updates 200; blank name 400; duplicate number 409; restricted issue 409; return 200 and later issue 201; repeating eligibility 200 with no history change; changes survive an API restart. |
+| Observed result | As expected. ST-500 was created and edited; rejected requests added no students; S1 history and the active loan were preserved while restricted; PostgreSQL showed the changes before and after the API restart. |
+| Pass / fail | **Pass** |
+| Issue / diagnosis | None |
+| Correction | None |
+| Retest outcome | Not required |
+| Evidence reference | `docs/evidence/T02.txt` (requests, responses, PostgreSQL reads before, after and after restart); `scripts/t02.ps1`. |
+
+## T03: Equipment management and protected state
+
+| Field | Entry |
+|---|---|
+| Test ID / date / environment | T03, 2026-11-27. Same environment as T01; dataset reset before the run; fixed application date 2026-11-10. |
+| Expected result | Create returns 201 with `Location` and an available item; updates 200; blank name or protected field 400; duplicate code 409; missing item 404; E1 stays unavailable with the same history; changes survive an API restart. |
+| Observed result | As expected. EQ-008 was created and renamed; E1's description changed while it stayed unavailable; rejected requests changed no equipment; borrowing records were unchanged; PostgreSQL showed the changes before and after the API restart. |
+| Pass / fail | **Pass** |
+| Issue / diagnosis | None |
+| Correction | None |
+| Retest outcome | Not required |
+| Evidence reference | `docs/evidence/T03.txt` (requests, responses, PostgreSQL reads before, after and after restart); `scripts/t03.ps1`. |

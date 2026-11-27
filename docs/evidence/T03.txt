@@ -1,0 +1,176 @@
+﻿T03 run at 2026-11-27 06:13:22 +08:00
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment/1/borrowings
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+
+--- PostgreSQL (equipment_borrowing_test): before, 06:13:26 ---
+ Id | Identifier |    Name    | Description | IsAvailable 
+----+------------+------------+-------------+-------------
+  1 | EQ-001     | Camera     |             | f
+  2 | EQ-002     | Laptop     |             | t
+  3 | EQ-003     | Projector  |             | t
+  4 | EQ-004     | Tablet     |             | f
+  5 | EQ-005     | Microphone |             | f
+  6 | EQ-006     | Tripod     |             | t
+  7 | EQ-007     | Speaker    |             | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+POST http://localhost:5171/api/v1/equipment
+Request: {"equipmentCode":"EQ-008","name":"Monitor","description":null}
+Status: 201
+Location: /api/v1/equipment/8
+Body: {"id":8,"equipmentCode":"EQ-008","name":"Monitor","description":null,"isAvailable":true}
+[PASS] expected status 201
+[PASS] 201 includes Location
+[PASS] new item is available
+
+GET http://localhost:5171/api/v1/equipment/8
+Status: 200
+Body: {"id":8,"equipmentCode":"EQ-008","name":"Monitor","description":null,"isAvailable":true}
+[PASS] expected status 200
+[PASS] Location returns EQ-008 with no description
+
+PUT http://localhost:5171/api/v1/equipment/8
+Request: {"equipmentCode":"EQ-008","name":"Monitor Mk2","description":null}
+Status: 200
+Body: {"id":8,"equipmentCode":"EQ-008","name":"Monitor Mk2","description":null,"isAvailable":true}
+[PASS] expected status 200
+[PASS] EQ-008 name changed
+
+PUT http://localhost:5171/api/v1/equipment/1
+Request: {"equipmentCode":"EQ-001","name":"Camera","description":"Digital camera"}
+Status: 200
+Body: {"id":1,"equipmentCode":"EQ-001","name":"Camera","description":"Digital camera","isAvailable":false}
+[PASS] expected status 200
+[PASS] E1 description changed, still unavailable
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":"Digital camera","isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true},{"id":8,"equipmentCode":"EQ-008","name":"Monitor Mk2","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+PUT http://localhost:5171/api/v1/equipment/1
+Request: {"equipmentCode":"EQ-001","name":"   ","description":"Digital camera"}
+Status: 400
+Body: {"code":"validation_failed","message":"Equipment name is required."}
+[PASS] expected status 400
+
+POST http://localhost:5171/api/v1/equipment
+Request: {"equipmentCode":" eq-001 ","name":"Duplicate","description":null}
+Status: 409
+Body: {"code":"conflict","message":"Equipment with identifier 'eq-001' already exists (identifiers are compared ignoring case and surrounding spaces). No changes were made."}
+[PASS] expected status 409
+
+PUT http://localhost:5171/api/v1/equipment/1
+Request: {"equipmentCode":" eq-002 ","name":"Camera","description":"Digital camera"}
+Status: 409
+Body: {"code":"conflict","message":"Equipment with identifier 'eq-002' already exists (identifiers are compared ignoring case and surrounding spaces). No changes were made."}
+[PASS] expected status 409
+
+PUT http://localhost:5171/api/v1/equipment/1
+Request: {"equipmentCode":"EQ-001","name":"Camera","description":"Digital camera","isAvailable":true}
+Status: 400
+Body: {"code":"invalid_request","message":"The request contains a field that is not part of the contract or is not editable (identifiers, availability and status cannot be set)."}
+[PASS] expected status 400
+
+PUT http://localhost:5171/api/v1/equipment/999999
+Request: {"equipmentCode":"EQ-999","name":"Missing","description":null}
+Status: 404
+Body: {"code":"not_found","message":"That item no longer exists. The list has been refreshed."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":"Digital camera","isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true},{"id":8,"equipmentCode":"EQ-008","name":"Monitor Mk2","description":null,"isAvailable":true}]
+[PASS] expected status 200
+[PASS] rejected requests changed no equipment
+[PASS] eight items in total
+
+GET http://localhost:5171/api/v1/equipment/1/borrowings
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] E1 history unchanged
+
+--- PostgreSQL (equipment_borrowing_test): after, 06:13:35 ---
+ Id | Identifier |    Name     |  Description   | IsAvailable 
+----+------------+-------------+----------------+-------------
+  1 | EQ-001     | Camera      | Digital camera | f
+  2 | EQ-002     | Laptop      |                | t
+  3 | EQ-003     | Projector   |                | t
+  4 | EQ-004     | Tablet      |                | f
+  5 | EQ-005     | Microphone  |                | f
+  6 | EQ-006     | Tripod      |                | t
+  7 | EQ-007     | Speaker     |                | t
+  8 | EQ-008     | Monitor Mk2 |                | t
+(8 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+All T03 script checks passed.
+
+=== After API restart, 2026-11-27 06:14:57 +08:00 ===
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":"Digital camera","isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true},{"id":8,"equipmentCode":"EQ-008","name":"Monitor Mk2","description":null,"isAvailable":true}]
+[PASS] expected status 200
+[PASS] EQ-008 edit survived restart
+[PASS] E1 edit survived restart, still unavailable
+
+--- PostgreSQL (equipment_borrowing_test): after restart, 06:15:01 ---
+ Id | Identifier |    Name     |  Description   | IsAvailable 
+----+------------+-------------+----------------+-------------
+  1 | EQ-001     | Camera      | Digital camera | f
+  2 | EQ-002     | Laptop      |                | t
+  3 | EQ-003     | Projector   |                | t
+  4 | EQ-004     | Tablet      |                | f
+  5 | EQ-005     | Microphone  |                | f
+  6 | EQ-006     | Tripod      |                | t
+  7 | EQ-007     | Speaker     |                | t
+  8 | EQ-008     | Monitor Mk2 |                | t
+(8 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+All T03 script checks passed.
