@@ -1,0 +1,317 @@
+﻿T04 run at 2026-11-27 19:20:01 +08:00
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+--- PostgreSQL (equipment_borrowing_test): before, 19:20:05 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentNumber | Identifier |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-001     | Active   | 2026-11-01   | 2026-11-09         | 
+  2 | ST-100        | EQ-003     | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  3 | ST-300        | EQ-004     | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-005     | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":4,"equipmentId":2,"expectedReturnDate":"2026-11-12"}
+Status: 201
+Location: /api/v1/borrowings/5
+Body: {"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 201
+[PASS] 201 includes Location
+
+GET http://localhost:5171/api/v1/borrowings/5
+Status: 200
+Body: {"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 200
+[PASS] Active, borrowed 2026-11-10, due 2026-11-12
+
+GET http://localhost:5171/api/v1/equipment/2
+Status: 200
+Body: {"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":false}
+[PASS] expected status 200
+[PASS] E2 unavailable
+
+--- PostgreSQL (equipment_borrowing_test): after issue, 19:20:10 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | f
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentNumber | Identifier |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-001     | Active   | 2026-11-01   | 2026-11-09         | 
+  2 | ST-100        | EQ-003     | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  3 | ST-300        | EQ-004     | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-005     | Active   | 2026-11-03   | 2026-11-12         | 
+  5 | ST-400        | EQ-002     | Active   | 2026-11-10   | 2026-11-12         | 
+(5 rows)
+
+
+GET http://localhost:5171/api/v1/borrowings
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":2,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"},{"id":4,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":false},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":2,"equipmentId":6,"expectedReturnDate":"2026-11-12"}
+Status: 409
+Body: {"code":"conflict","message":"Student 'Ben Diaz' is not currently allowed to borrow equipment."}
+[PASS] expected status 409
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":4,"equipmentId":1,"expectedReturnDate":"2026-11-12"}
+Status: 409
+Body: {"code":"conflict","message":"Unavailable equipment: Camera."}
+[PASS] expected status 409
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":999999,"equipmentId":6,"expectedReturnDate":"2026-11-12"}
+Status: 404
+Body: {"code":"not_found","message":"The selected student no longer exists."}
+[PASS] expected status 404
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":4,"equipmentId":999999,"expectedReturnDate":"2026-11-12"}
+Status: 404
+Body: {"code":"not_found","message":"Equipment not found: 999999."}
+[PASS] expected status 404
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":4,"equipmentId":6,"expectedReturnDate":"2026-11-09"}
+Status: 400
+Body: {"code":"validation_failed","message":"The expected return date must be later than the checkout date."}
+[PASS] expected status 400
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":4,"equipmentId":6,"expectedReturnDate":"not-a-date"}
+Status: 400
+Body: {"code":"invalid_request","message":"The request body is not valid JSON for this endpoint. Check field names, types and date format (YYYY-MM-DD)."}
+[PASS] expected status 400
+
+GET http://localhost:5171/api/v1/borrowings
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":2,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"},{"id":4,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":false},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+[PASS] rejected attempts changed no borrowings
+[PASS] rejected attempts changed no equipment
+
+--- PostgreSQL (equipment_borrowing_test): after rejected attempts, 19:20:18 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | f
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentNumber | Identifier |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-001     | Active   | 2026-11-01   | 2026-11-09         | 
+  2 | ST-100        | EQ-003     | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  3 | ST-300        | EQ-004     | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-005     | Active   | 2026-11-03   | 2026-11-12         | 
+  5 | ST-400        | EQ-002     | Active   | 2026-11-10   | 2026-11-12         | 
+(5 rows)
+
+
+POST http://localhost:5171/api/v1/borrowings/5/return
+Request: {}
+Status: 200
+Body: {"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 200
+[PASS] returned on 2026-11-10
+
+GET http://localhost:5171/api/v1/borrowings/5
+Status: 200
+Body: {"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 200
+[PASS] GET shows the same borrowing as Returned
+
+GET http://localhost:5171/api/v1/equipment/2
+Status: 200
+Body: {"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true}
+[PASS] expected status 200
+[PASS] E2 available again
+
+POST http://localhost:5171/api/v1/borrowings/5/return
+Request: {}
+Status: 409
+Body: {"code":"conflict","message":"This borrowing has already been returned."}
+[PASS] expected status 409
+
+POST http://localhost:5171/api/v1/borrowings/999999/return
+Request: {}
+Status: 404
+Body: {"code":"not_found","message":"Borrowing 999999 was not found. The list has been refreshed."}
+[PASS] expected status 404
+
+--- PostgreSQL (equipment_borrowing_test): after return, 19:20:21 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentNumber | Identifier |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-001     | Active   | 2026-11-01   | 2026-11-09         | 
+  2 | ST-100        | EQ-003     | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  3 | ST-300        | EQ-004     | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-005     | Active   | 2026-11-03   | 2026-11-12         | 
+  5 | ST-400        | EQ-002     | Returned | 2026-11-10   | 2026-11-12         | 2026-11-10
+(5 rows)
+
+
+All T04 script checks passed.
+
+=== After API restart, 2026-11-27 19:20:31 +08:00 ===
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/students/4/borrowings
+Status: 200
+Body: [{"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}]
+[PASS] expected status 200
+[PASS] S4 has one borrowing
+
+GET http://localhost:5171/api/v1/borrowings/5
+Status: 200
+Body: {"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 200
+[PASS] borrowing still Returned on 2026-11-10
+
+GET http://localhost:5171/api/v1/equipment/2
+Status: 200
+Body: {"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true}
+[PASS] expected status 200
+[PASS] E2 still available
+
+--- PostgreSQL (equipment_borrowing_test): after restart, 19:20:34 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentNumber | Identifier |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-001     | Active   | 2026-11-01   | 2026-11-09         | 
+  2 | ST-100        | EQ-003     | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  3 | ST-300        | EQ-004     | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-005     | Active   | 2026-11-03   | 2026-11-12         | 
+  5 | ST-400        | EQ-002     | Returned | 2026-11-10   | 2026-11-12         | 2026-11-10
+(5 rows)
+
+
+All T04 script checks passed.
+
+=== After API restart, 2026-11-27 19:23:10 +08:00 ===
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/students/4/borrowings
+Status: 200
+Body: [{"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}]
+[PASS] expected status 200
+[PASS] S4 has one borrowing
+
+GET http://localhost:5171/api/v1/borrowings/5
+Status: 200
+Body: {"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-10","status":"Returned","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 200
+[PASS] borrowing still Returned on 2026-11-10
+
+GET http://localhost:5171/api/v1/equipment/2
+Status: 200
+Body: {"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true}
+[PASS] expected status 200
+[PASS] E2 still available
+
+--- PostgreSQL (equipment_borrowing_test): after restart, 19:23:14 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentNumber | Identifier |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+---------------+------------+----------+--------------+--------------------+------------
+  1 | ST-100        | EQ-001     | Active   | 2026-11-01   | 2026-11-09         | 
+  2 | ST-100        | EQ-003     | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  3 | ST-300        | EQ-004     | Active   | 2026-11-03   | 2026-11-12         | 
+  4 | ST-300        | EQ-005     | Active   | 2026-11-03   | 2026-11-12         | 
+  5 | ST-400        | EQ-002     | Returned | 2026-11-10   | 2026-11-12         | 2026-11-10
+(5 rows)
+
+
+All T04 script checks passed.

@@ -38,3 +38,16 @@
 | Correction | None |
 | Retest outcome | Not required |
 | Evidence reference | `docs/evidence/T03.txt` (requests, responses, PostgreSQL reads before, after and after restart); `scripts/t03.ps1`. |
+
+## T04: Single borrowing, return, validation and persistence
+
+| Field | Entry |
+|---|---|
+| Test ID / date / environment | T04, 2026-11-27. Same environment as T01; dataset reset before the run; fixed application date 2026-11-10. |
+| Expected result | Issue 201 with `Location`, GET 200; invalid date 400; missing reference 404; ineligible or unavailable 409; return 200, repeat 409; rejected attempts write nothing; state survives an API restart. |
+| Observed result | As expected. S4 borrowed E2 and returned it on 2026-11-10; the same record changed from Active to Returned and E2 became available again; rejected attempts changed no borrowings or equipment; PostgreSQL showed the same state after the restart. |
+| Pass / fail | **Pass** |
+| Issue / diagnosis | No application defect. The first after-restart reading (19:20:31) followed the main run too closely to show a restart, so the API was stopped and started again and the check repeated. |
+| Correction | None to the application |
+| Retest outcome | Restart check repeated at 19:23:10: passed. The restart (Ctrl+C, then `dotnet run`) was performed manually and is not captured in the script output. |
+| Evidence reference | `docs/evidence/T04.txt` (use the 19:23:10 "After API restart" section); `scripts/t04.ps1`. |
