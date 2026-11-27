@@ -1,0 +1,543 @@
+﻿T05 run at 2026-11-27 19:39:44 +08:00
+
+========== Step 1: S4 checks out E2 and E6 ==========
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+--- PostgreSQL (equipment_borrowing_test): before step 1, 19:39:45 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":4,"equipmentIds":[2,6],"expectedReturnDate":"2026-11-12"}
+Status: 201
+Location: /api/v1/borrowings
+Body: {"borrowings":[{"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":6,"studentId":4,"equipmentId":6,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-006","equipmentName":"Tripod"}]}
+[PASS] expected status 201
+[PASS] two borrowings returned
+
+GET http://localhost:5171/api/v1/students/4/borrowings
+Status: 200
+Body: [{"id":5,"studentId":4,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":6,"studentId":4,"equipmentId":6,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-400","studentName":"Dani Ong","equipmentCode":"EQ-006","equipmentName":"Tripod"}]
+[PASS] expected status 200
+[PASS] S4 has two active items
+
+--- PostgreSQL (equipment_borrowing_test): after step 1, 19:39:47 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | f
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | f
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+  5 |         4 |           2 | Active   | 2026-11-10   | 2026-11-12         | 
+  6 |         4 |           6 | Active   | 2026-11-10   | 2026-11-12         | 
+(6 rows)
+
+
+========== Step 2a: S3 (two active) borrows E2 ==========
+
+--- PostgreSQL (equipment_borrowing_test): before 2a, 19:39:48 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+POST http://localhost:5171/api/v1/borrowings
+Request: {"studentId":3,"equipmentId":2,"expectedReturnDate":"2026-11-12"}
+Status: 201
+Location: /api/v1/borrowings/5
+Body: {"id":5,"studentId":3,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-002","equipmentName":"Laptop"}
+[PASS] expected status 201
+
+GET http://localhost:5171/api/v1/students/3/borrowings
+Status: 200
+Body: [{"id":5,"studentId":3,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] S3 has exactly three active items
+
+--- PostgreSQL (equipment_borrowing_test): after 2a, 19:39:49 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | f
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+  5 |         3 |           2 | Active   | 2026-11-10   | 2026-11-12         | 
+(5 rows)
+
+
+========== Step 2b: S1 (one active) checks out E2 and E6 ==========
+
+--- PostgreSQL (equipment_borrowing_test): before 2b, 19:39:50 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":1,"equipmentIds":[2,6],"expectedReturnDate":"2026-11-12"}
+Status: 201
+Location: /api/v1/borrowings
+Body: {"borrowings":[{"id":5,"studentId":1,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":6,"studentId":1,"equipmentId":6,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-006","equipmentName":"Tripod"}]}
+[PASS] expected status 201
+[PASS] two borrowings returned
+
+GET http://localhost:5171/api/v1/students/1/borrowings
+Status: 200
+Body: [{"id":5,"studentId":1,"equipmentId":2,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-002","equipmentName":"Laptop"},{"id":6,"studentId":1,"equipmentId":6,"borrowedDate":"2026-11-10","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-006","equipmentName":"Tripod"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] S1 has exactly three active items
+
+--- PostgreSQL (equipment_borrowing_test): after 2b, 19:39:51 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | f
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | f
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+  5 |         1 |           2 | Active   | 2026-11-10   | 2026-11-12         | 
+  6 |         1 |           6 | Active   | 2026-11-10   | 2026-11-12         | 
+(6 rows)
+
+
+========== Step 2c: S3 (two active) checks out E2 and E6, over the limit ==========
+
+--- PostgreSQL (equipment_borrowing_test): before 2c, 19:39:52 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+-- Subcase: over the limit
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":3,"equipmentIds":[2,6],"expectedReturnDate":"2026-11-12"}
+Status: 409
+Body: {"code":"conflict","message":"Student 'Cara Lim' has 2 active borrowing(s); adding 2 would exceed the limit of 3."}
+[PASS] expected status 409
+
+--- PostgreSQL (equipment_borrowing_test): after over the limit, 19:39:53 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (over the limit)
+
+========== Step 3: invalid requests ==========
+
+--- PostgreSQL (equipment_borrowing_test): before step 3, 19:39:54 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+-- Subcase: duplicate items
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":4,"equipmentIds":[2,2],"expectedReturnDate":"2026-11-12"}
+Status: 400
+Body: {"code":"validation_failed","message":"The same item was selected more than once."}
+[PASS] expected status 400
+
+--- PostgreSQL (equipment_borrowing_test): after duplicate items, 19:39:55 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (duplicate items)
+
+-- Subcase: one item
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":4,"equipmentIds":[2],"expectedReturnDate":"2026-11-12"}
+Status: 400
+Body: {"code":"validation_failed","message":"A multi-item checkout needs at least two items."}
+[PASS] expected status 400
+
+--- PostgreSQL (equipment_borrowing_test): after one item, 19:39:56 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (one item)
+
+-- Subcase: unavailable E1 with E2
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":4,"equipmentIds":[1,2],"expectedReturnDate":"2026-11-12"}
+Status: 409
+Body: {"code":"conflict","message":"Unavailable equipment: Camera."}
+[PASS] expected status 409
+
+--- PostgreSQL (equipment_borrowing_test): after unavailable E1 with E2, 19:39:57 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (unavailable E1 with E2)
+
+-- Subcase: restricted S2
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":2,"equipmentIds":[2,6],"expectedReturnDate":"2026-11-12"}
+Status: 409
+Body: {"code":"conflict","message":"Student 'Ben Diaz' is not currently allowed to borrow equipment."}
+[PASS] expected status 409
+
+--- PostgreSQL (equipment_borrowing_test): after restricted S2, 19:39:58 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (restricted S2)
+
+-- Subcase: missing equipment
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":4,"equipmentIds":[2,999999],"expectedReturnDate":"2026-11-12"}
+Status: 404
+Body: {"code":"not_found","message":"Equipment not found: 999999."}
+[PASS] expected status 404
+
+--- PostgreSQL (equipment_borrowing_test): after missing equipment, 19:39:59 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (missing equipment)
+
+-- Subcase: missing student
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":999999,"equipmentIds":[2,6],"expectedReturnDate":"2026-11-12"}
+Status: 404
+Body: {"code":"not_found","message":"The selected student no longer exists."}
+[PASS] expected status 404
+
+--- PostgreSQL (equipment_borrowing_test): after missing student, 19:40:00 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (missing student)
+
+-- Subcase: date before checkout date
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":4,"equipmentIds":[2,6],"expectedReturnDate":"2026-11-09"}
+Status: 400
+Body: {"code":"validation_failed","message":"The expected return date must be later than the checkout date."}
+[PASS] expected status 400
+
+--- PostgreSQL (equipment_borrowing_test): after date before checkout date, 19:40:01 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (date before checkout date)
+
+All T05 script checks passed.
+
+========== Step 4: injected failure, 2026-11-27 19:44:30 +08:00 ==========
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+Failure point: EfBorrowingTransactions.CheckoutAsync, after SaveChangesAsync, before CommitAsync.
+
+--- PostgreSQL (equipment_borrowing_test): before injected failure, 19:44:31 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+-- Subcase: injected failure
+
+POST http://localhost:5171/api/v1/checkout-requests
+Request: {"studentId":4,"equipmentIds":[2,6],"expectedReturnDate":"2026-11-12"}
+Status: 500
+Body: {"code":"server_error","message":"The database operation failed and no changes were saved. Please try again."}
+[PASS] expected status 500
+
+--- PostgreSQL (equipment_borrowing_test): after injected failure, 19:44:33 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] no rows or availability changed (injected failure)
+
+All T05 script checks passed.

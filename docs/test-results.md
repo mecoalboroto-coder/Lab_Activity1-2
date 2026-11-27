@@ -51,3 +51,17 @@
 | Correction | None to the application |
 | Retest outcome | Restart check repeated at 19:23:10: passed. The restart (Ctrl+C, then `dotnet run`) was performed manually and is not captured in the script output. |
 | Evidence reference | `docs/evidence/T04.txt` (use the 19:23:10 "After API restart" section); `scripts/t04.ps1`. |
+
+## T05: Multi-item checkout, borrowing limit and atomic rollback
+
+| Field | Entry |
+|---|---|
+| Test ID / date / environment | T05, 2026-11-27. Same environment as T01; dataset reset before each step; fixed application date 2026-11-10. Failure injected with `EQUIPMENT_BORROWING_FAIL_BEFORE_COMMIT=1` for step 4 only. |
+| Expected result | Multi-item success 201; exactly three active items allowed, over the limit 409; duplicates, one item or invalid date 400; missing reference 404; unavailable or restricted 409; injected failure 500; rejected and failed requests leave no rows or availability changes. |
+| Observed result (first attempts) | Attempt 1 (19:29): steps 1 to 2c behaved as expected, then the API could not be reached for the step 3 requests. Attempt 2 (19:32): every checkout or issue that should have succeeded returned 500 and wrote nothing. |
+| Pass / fail (first attempts) | **Fail** |
+| Issue / diagnosis | Test procedure errors. Attempt 1: the API was stopped while the script was still running. Attempt 2: the failure injector was still switched on during the normal steps. |
+| Correction | Cleared `EQUIPMENT_BORROWING_FAIL_BEFORE_COMMIT`, restarted the API and let the run finish before changing it. No application code changed. |
+| Retest outcome | Steps 1 to 3 passed (19:39). Step 4 passed (19:44): 500 `server_error`, and PostgreSQL was identical before and after. **Pass** |
+| Failure point | `EfBorrowingTransactions.CheckoutAsync`: after `SaveChangesAsync`, before `CommitAsync`. |
+| Evidence reference | Retest: `docs/evidence/T05.txt`. Attempt 2: `docs/evidence/T05-failed-run.txt`. Attempt 1 output was overwritten and is not retained. Script: `scripts/t05.ps1`. |
