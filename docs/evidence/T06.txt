@@ -1,0 +1,242 @@
+﻿T06 run at 2026-11-27 19:54:23 +08:00
+
+========== Controlled dataset ==========
+
+GET http://localhost:5171/api/v1/students
+Status: 200
+Body: [{"id":1,"studentNumber":"ST-100","fullName":"Ada Cruz","contact":null,"isEligible":true},{"id":2,"studentNumber":"ST-200","fullName":"Ben Diaz","contact":null,"isEligible":false},{"id":3,"studentNumber":"ST-300","fullName":"Cara Lim","contact":null,"isEligible":true},{"id":4,"studentNumber":"ST-400","fullName":"Dani Ong","contact":null,"isEligible":true}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/equipment
+Status: 200
+Body: [{"id":1,"equipmentCode":"EQ-001","name":"Camera","description":null,"isAvailable":false},{"id":2,"equipmentCode":"EQ-002","name":"Laptop","description":null,"isAvailable":true},{"id":3,"equipmentCode":"EQ-003","name":"Projector","description":null,"isAvailable":true},{"id":4,"equipmentCode":"EQ-004","name":"Tablet","description":null,"isAvailable":false},{"id":5,"equipmentCode":"EQ-005","name":"Microphone","description":null,"isAvailable":false},{"id":6,"equipmentCode":"EQ-006","name":"Tripod","description":null,"isAvailable":true},{"id":7,"equipmentCode":"EQ-007","name":"Speaker","description":null,"isAvailable":true}]
+[PASS] expected status 200
+
+--- PostgreSQL (equipment_borrowing_test): before, 19:54:25 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+
+GET http://localhost:5171/api/v1/students/1/borrowings
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] S1 history: EQ-001 Active and EQ-003 Returned
+
+GET http://localhost:5171/api/v1/students/4/borrowings
+Status: 200
+Body: []
+[PASS] expected status 200
+[PASS] S4 history is []
+
+GET http://localhost:5171/api/v1/equipment/1/borrowings
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] E1 history: one Active record for ST-100
+
+GET http://localhost:5171/api/v1/equipment/3/borrowings
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"}]
+[PASS] expected status 200
+[PASS] E3 history: returned by ST-100 on 2026-11-08
+
+GET http://localhost:5171/api/v1/students/999999/borrowings
+Status: 404
+Body: {"code":"not_found","message":"Student 999999 was not found."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/equipment/999999/borrowings
+Status: 404
+Body: {"code":"not_found","message":"Equipment 999999 was not found."}
+[PASS] expected status 404
+
+GET http://localhost:5171/api/v1/borrowings
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+
+GET http://localhost:5171/api/v1/borrowings?search=%20%20aDa%20%20
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"}]
+[PASS] expected status 200
+[PASS] '?search=%20%20aDa%20%20' returns EQ-001,EQ-003
+
+GET http://localhost:5171/api/v1/borrowings?search=sT-30
+Status: 200
+Body: [{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] '?search=sT-30' returns EQ-004,EQ-005
+
+GET http://localhost:5171/api/v1/borrowings?search=jEcT
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"}]
+[PASS] expected status 200
+[PASS] '?search=jEcT' returns EQ-003
+
+GET http://localhost:5171/api/v1/borrowings?status=Active
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] '?status=Active' returns EQ-001,EQ-004,EQ-005
+
+GET http://localhost:5171/api/v1/borrowings?status=Returned
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"}]
+[PASS] expected status 200
+[PASS] '?status=Returned' returns EQ-003
+
+GET http://localhost:5171/api/v1/borrowings?status=All
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] '?status=All' returns EQ-001,EQ-003,EQ-004,EQ-005
+
+GET http://localhost:5171/api/v1/borrowings?sort=borrowedDate&direction=asc
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] four rows ordered by borrowedDate asc
+[PASS] ties in borrowedDate asc ordered by ID ascending
+
+GET http://localhost:5171/api/v1/borrowings?sort=borrowedDate&direction=asc
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] same order when repeated
+
+GET http://localhost:5171/api/v1/borrowings?sort=borrowedDate&direction=desc
+Status: 200
+Body: [{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] four rows ordered by borrowedDate desc
+[PASS] ties in borrowedDate desc use a consistent ID order
+
+GET http://localhost:5171/api/v1/borrowings?sort=borrowedDate&direction=desc
+Status: 200
+Body: [{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] same order when repeated
+
+GET http://localhost:5171/api/v1/borrowings?sort=expectedReturnDate&direction=asc
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] four rows ordered by expectedReturnDate asc
+[PASS] ties in expectedReturnDate asc ordered by ID ascending
+
+GET http://localhost:5171/api/v1/borrowings?sort=expectedReturnDate&direction=asc
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] same order when repeated
+
+GET http://localhost:5171/api/v1/borrowings?sort=expectedReturnDate&direction=desc
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] four rows ordered by expectedReturnDate desc
+[PASS] ties in expectedReturnDate desc use a consistent ID order
+
+GET http://localhost:5171/api/v1/borrowings?sort=expectedReturnDate&direction=desc
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] same order when repeated
+
+GET http://localhost:5171/api/v1/borrowings?search=ada&status=Active
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] '?search=ada&status=Active' returns EQ-001
+
+GET http://localhost:5171/api/v1/borrowings?search=ada&status=Returned
+Status: 200
+Body: [{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"}]
+[PASS] expected status 200
+[PASS] '?search=ada&status=Returned' returns EQ-003
+
+GET http://localhost:5171/api/v1/borrowings?status=Active&sort=expectedReturnDate&direction=desc
+Status: 200
+Body: [{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"},{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"}]
+[PASS] expected status 200
+[PASS] combined filter and sort: EQ-001 (earliest due) is last of three
+
+GET http://localhost:5171/api/v1/borrowings
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] clearing criteria restores the default result
+
+GET http://localhost:5171/api/v1/borrowings?status=All&sort=borrowedDate&direction=asc
+Status: 200
+Body: [{"id":2,"studentId":1,"equipmentId":1,"borrowedDate":"2026-11-01","expectedReturnDate":"2026-11-09","returnedDate":null,"status":"Active","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-001","equipmentName":"Camera"},{"id":1,"studentId":1,"equipmentId":3,"borrowedDate":"2026-11-02","expectedReturnDate":"2026-11-12","returnedDate":"2026-11-08","status":"Returned","studentNumber":"ST-100","studentName":"Ada Cruz","equipmentCode":"EQ-003","equipmentName":"Projector"},{"id":3,"studentId":3,"equipmentId":5,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-005","equipmentName":"Microphone"},{"id":4,"studentId":3,"equipmentId":4,"borrowedDate":"2026-11-03","expectedReturnDate":"2026-11-12","returnedDate":null,"status":"Active","studentNumber":"ST-300","studentName":"Cara Lim","equipmentCode":"EQ-004","equipmentName":"Tablet"}]
+[PASS] expected status 200
+[PASS] default equals status=All, borrowedDate, asc
+
+GET http://localhost:5171/api/v1/borrowings?search=zzz-no-match
+Status: 200
+Body: []
+[PASS] expected status 200
+[PASS] returns [] for '?search=zzz-no-match'
+
+GET http://localhost:5171/api/v1/borrowings?search=st-300&status=Returned
+Status: 200
+Body: []
+[PASS] expected status 200
+[PASS] returns [] for '?search=st-300&status=Returned'
+
+GET http://localhost:5171/api/v1/borrowings?status=Lost
+Status: 400
+Body: {"code":"invalid_query","message":"Query parameter 'status' must be Active, Returned or All."}
+[PASS] expected status 400
+
+GET http://localhost:5171/api/v1/borrowings?sort=name
+Status: 400
+Body: {"code":"invalid_query","message":"Query parameter 'sort' must be borrowedDate or expectedReturnDate."}
+[PASS] expected status 400
+
+GET http://localhost:5171/api/v1/borrowings?direction=sideways
+Status: 400
+Body: {"code":"invalid_query","message":"Query parameter 'direction' must be asc or desc."}
+[PASS] expected status 400
+
+--- PostgreSQL (equipment_borrowing_test): after, 19:54:41 ---
+ Id | Identifier | IsAvailable 
+----+------------+-------------
+  1 | EQ-001     | f
+  2 | EQ-002     | t
+  3 | EQ-003     | t
+  4 | EQ-004     | f
+  5 | EQ-005     | f
+  6 | EQ-006     | t
+  7 | EQ-007     | t
+(7 rows)
+
+ Id | StudentId | EquipmentId |  Status  | DateBorrowed | ExpectedReturnDate | ReturnedAt 
+----+-----------+-------------+----------+--------------+--------------------+------------
+  1 |         1 |           3 | Returned | 2026-11-02   | 2026-11-12         | 2026-11-08
+  2 |         1 |           1 | Active   | 2026-11-01   | 2026-11-09         | 
+  3 |         3 |           5 | Active   | 2026-11-03   | 2026-11-12         | 
+  4 |         3 |           4 | Active   | 2026-11-03   | 2026-11-12         | 
+(4 rows)
+
+[PASS] reads changed nothing in the database
+
+All T06 script checks passed.

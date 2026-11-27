@@ -65,3 +65,16 @@
 | Retest outcome | Steps 1 to 3 passed (19:39). Step 4 passed (19:44): 500 `server_error`, and PostgreSQL was identical before and after. **Pass** |
 | Failure point | `EfBorrowingTransactions.CheckoutAsync`: after `SaveChangesAsync`, before `CommitAsync`. |
 | Evidence reference | Retest: `docs/evidence/T05.txt`. Attempt 2: `docs/evidence/T05-failed-run.txt`. Attempt 1 output was overwritten and is not retained. Script: `scripts/t05.ps1`. |
+
+## T06: Histories, search, filters, sorting and empty results
+
+| Field | Entry |
+|---|---|
+| Test ID / date / environment | T06, 2026-11-27. Same environment as T01; dataset reset before the run; fixed application date 2026-11-10. |
+| Expected result | Histories include active and returned records; empty results are `[]`; missing student or item 404; search is trimmed, case-insensitive and partial; filters combine; both date sorts work in both directions with stable ties; unsupported values 400; no database changes. |
+| Observed result | As expected. Tied dates were ordered by borrowing ID ascending; clearing criteria returned the default result; PostgreSQL was identical before and after. |
+| Pass / fail | **Pass** |
+| Issue / diagnosis | None |
+| Correction | None |
+| Retest outcome | Not required |
+| Evidence reference | `docs/evidence/T06.txt` (requests, responses, PostgreSQL reads before and after); `scripts/t06.ps1`. |
